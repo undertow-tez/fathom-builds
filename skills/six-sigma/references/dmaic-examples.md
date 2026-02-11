@@ -1,8 +1,161 @@
 # DMAIC Examples for AI Agents
 
-Real examples of Six Sigma process improvements for AI agents.
+Real examples of Six Sigma process improvements for AI agents, with focus on crypto/web3 use cases.
 
-## Example 1: Weather Betting Accuracy
+## Example 1: Gas Optimization for Trading Bot (Crypto)
+
+### Define Phase
+**Problem**: High gas costs and 8% failed transaction rate on Base  
+**Goal**: Reduce failed transactions to <2% and decrease average gas cost by 30%  
+**Metric**: Transaction success rate, average gas per trade
+
+```bash
+scripts/dmaic_init.py \
+  --process "trading-gas-optimization" \
+  --goal "Reduce failed txns to <2%, cut gas 30%" \
+  --baseline-metric "success_rate" \
+  --baseline-value 0.92
+```
+
+### Measure Phase
+**Data Collection** (100 transactions):
+```bash
+# Log every transaction
+scripts/measure.py --process trading-gas-optimization --metric success_rate --value 1  # success
+scripts/measure.py --process trading-gas-optimization --metric success_rate --value 0  # failed
+scripts/measure.py --process trading-gas-optimization --metric gas_cost --value 0.00045  # ETH
+# ... 97 more trades
+```
+
+**Results**:
+- 92 successes, 8 failures (8% failure rate)
+- Average gas: 0.00052 ETH (~$1.04)
+- Pattern: Failures clustered during high network congestion (>50 gwei base fee)
+
+### Analyze Phase
+```bash
+scripts/analyze.py --process trading-gas-optimization
+```
+
+**Findings**:
+- 7/8 failures occurred when base fee >60 gwei
+- Gas estimation was static (always 200k gas limit)
+- No retry logic for failed transactions
+- **Root Cause**: Static gas parameters don't adapt to network conditions
+
+**Pareto Analysis**:
+| Failure Type | Count | % |
+|--------------|-------|---|
+| Out of gas | 5 | 62.5% |
+| Slippage exceeded | 2 | 25% |
+| Nonce collision | 1 | 12.5% |
+
+### Improve Phase
+**Changes Implemented**:
+```bash
+scripts/improve.py \
+  --process trading-gas-optimization \
+  --change "Added dynamic gas estimation + retry logic with exponential backoff" \
+  --hypothesis "Adaptive gas + retries will reduce failures" \
+  --expected-impact "-75% failure rate, -30% avg gas cost"
+```
+
+**Code Changes**:
+```python
+# Before
+gas_limit = 200000  # Static
+max_priority_fee = 2 * 10**9  # 2 gwei fixed
+
+# After  
+gas_estimate = await estimate_gas() * 1.2  # 20% buffer
+base_fee = await get_base_fee()
+if base_fee > 60 * 10**9:  # >60 gwei
+    wait_for_congestion_drop()  # Delay non-urgent trades
+max_priority_fee = min(base_fee * 0.1, 5 * 10**9)  # Dynamic tip
+# Add retry logic with backoff (3 attempts max)
+```
+
+### Control Phase
+**Ongoing Monitoring** (100 transactions post-fix):
+```bash
+scripts/control_chart.py --process trading-gas-optimization --metric success_rate
+```
+
+**Results**:
+- Success rate: 99% (from 92%)
+- Average gas: 0.00037 ETH (~$0.74, 29% reduction)
+- Failure rate: 1% (<2% target achieved)
+- UCL: 100%, LCL: 96% (process stable)
+
+**Lesson**: Dynamic parameters beat static configs for blockchain interactions
+
+---
+
+## Example 2: Token Launch Success Rate (Web3)
+
+### Define Phase
+**Problem**: 3 out of 10 token deployments failed (30% failure rate)  
+**Goal**: Achieve >95% deployment success rate  
+**Metrics**: Deployment success, gas costs, time to liquidity
+
+```bash
+scripts/dmaic_init.py \
+  --process "token-deployment" \
+  --goal "95%+ success rate" \
+  --baseline-metric "deployment_success" \
+  --baseline-value 0.70
+```
+
+### Measure Phase
+**Data** (20 deployment attempts):
+- 14 successes, 6 failures (70% success)
+- Failures: 3 gas estimation errors, 2 slippage on initial liquidity, 1 contract revert
+
+### Analyze Phase
+**Root Causes**:
+1. **Gas estimation** - Used default estimate, didn't account for contract complexity
+2. **Liquidity parameters** - Fixed slippage tolerance, failed in volatile markets
+3. **Contract validation** - No pre-deployment testing on fork/testnet
+
+### Improve Phase
+**Changes**:
+```bash
+scripts/improve.py \
+  --process token-deployment \
+  --change "Added testnet validation + dynamic slippage + 30% gas buffer" \
+  --expected-impact "+25% success rate"
+```
+
+**Validation Gate**:
+```python
+def deploy_token(name, symbol):
+    # 1. Test on fork first
+    fork_result = test_on_fork(name, symbol)
+    if not fork_result.success:
+        return Error("Failed on fork")
+    
+    # 2. Dynamic gas
+    gas_estimate = fork_result.gas_used * 1.3  # 30% buffer
+    
+    # 3. Check market conditions for liquidity add
+    volatility = get_market_volatility()
+    slippage = 0.5 if volatility < 0.02 else 1.0  # Adaptive
+    
+    # 4. Deploy with retry logic
+    return deploy_with_retries(gas_estimate, slippage)
+```
+
+### Control Phase
+**Results** (20 deployments post-fix):
+- Success rate: 95% (19/20)
+- Only 1 failure (extreme network congestion, manual retry succeeded)
+- Process capability: 3.5σ
+
+**Lesson**: Pre-flight validation prevents costly mainnet failures
+
+---
+
+## Example 3: Weather Betting Accuracy
 
 ### Define Phase
 **Problem**: Low accuracy on weather bets (40%)  

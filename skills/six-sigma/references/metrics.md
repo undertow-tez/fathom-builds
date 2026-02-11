@@ -1,6 +1,8 @@
 # Six Sigma Metrics for AI Agents
 
-## Core Metrics
+Focus on general + crypto/web3-specific metrics.
+
+## Core Metrics (All Agents)
 
 ### Defect Rate
 **Definition**: Errors or failures per 100 operations
@@ -137,6 +139,165 @@
 **When to use**: Optimizing context window usage, model selection
 
 **Tracking**: Log token usage + outcome value
+
+## Web3/Crypto-Specific Metrics
+
+### Profit Factor
+**Definition**: Ratio of gross profit to gross loss in trading
+
+**Formula**: `Gross Profit / Gross Loss`
+
+**Example**:
+- 10 trades: 6 wins ($120 profit), 4 losses ($40 loss)
+- Profit Factor = $120 / $40 = 3.0
+
+**Targets**:
+- PF < 1.0: Losing strategy
+- PF = 1.0-1.5: Breakeven/marginal
+- PF > 1.5: Good strategy
+- PF > 2.0: Excellent strategy
+
+**When to use**: Evaluating trading bot performance
+
+### Sharpe Ratio
+**Definition**: Risk-adjusted return (excess return per unit of risk)
+
+**Formula**: `(Return - Risk-Free Rate) / Standard Deviation of Returns`
+
+**Example**:
+- Average return: 2% per trade
+- Std dev: 5%
+- Risk-free rate: 0.1%
+- Sharpe = (0.02 - 0.001) / 0.05 = 0.38
+
+**Targets**:
+- Sharpe < 1: Poor risk-adjusted performance
+- Sharpe 1-2: Good
+- Sharpe > 2: Excellent
+
+**When to use**: Comparing different trading strategies
+
+### Gas Efficiency
+**Definition**: Average gas cost per transaction and failure rate
+
+**Metrics**:
+- Average gas (ETH) per successful transaction
+- Failed transaction rate (%)
+- Gas waste (gas spent on failed txns)
+
+**Example**:
+- 100 txns, 95 succeeded
+- Total gas: 0.05 ETH
+- Avg gas per successful txn: 0.05 / 95 = 0.000526 ETH
+- Failed txn rate: 5%
+- Gas waste: 5 failed * 0.0005 ETH = 0.0025 ETH (wasted)
+
+**Targets**:
+- Failed txn rate: <2% (5σ)
+- Gas optimization: Continuous improvement, track trend
+
+**When to use**: Optimizing blockchain interaction efficiency
+
+### Slippage Rate
+**Definition**: Difference between expected and actual execution price
+
+**Formula**: `|(Actual Price - Expected Price) / Expected Price| × 100`
+
+**Example**:
+- Expected: 1 ETH = 2000 USDC
+- Actual: 1 ETH = 1980 USDC
+- Slippage = |1980 - 2000| / 2000 × 100 = 1%
+
+**Targets**:
+- DEX swaps: <0.5% for liquid pairs, <2% for illiquid
+- Large orders: Use TWAP/limit orders to reduce slippage
+
+**When to use**: Trading execution quality, DEX selection
+
+### Impermanent Loss (IL)
+**Definition**: Loss from providing liquidity vs simply holding tokens
+
+**Formula**: 
+`IL = LP Value - HODL Value`
+or as percentage:
+`IL% = (LP Value / HODL Value - 1) × 100`
+
+**Example**:
+- Deposited 1 ETH + 2000 USDC (value: $4000)
+- After 1 week: LP value = $3900, HODL value = $4100
+- IL = $3900 - $4100 = -$200
+- IL% = ($3900 / $4100 - 1) × 100 = -4.88%
+
+**Mitigation**:
+- Choose stable/correlated pairs (e.g., USDC/DAI)
+- Target high APY to offset IL
+- Use dynamic fee tiers (Uniswap V3)
+
+**When to use**: LP farming strategy optimization
+
+### Transaction Success Rate
+**Definition**: Percentage of transactions that succeed on first attempt
+
+**Formula**: `(Successful Txns / Total Attempts) × 100`
+
+**Example**:
+- 200 transactions attempted
+- 196 succeeded, 4 failed
+- Success rate: 98%
+- DPMO: (4 / 200) × 1,000,000 = 20,000 DPMO (~3.8σ)
+
+**Targets**:
+- Critical operations (transfers, deployments): >99.5% (5σ)
+- General transactions: >98% (4σ)
+
+**When to use**: Measuring infrastructure reliability
+
+### Smart Contract Defect Density
+**Definition**: Number of bugs per 1000 lines of code (KLOC)
+
+**Formula**: `(Total Bugs / Lines of Code) × 1000`
+
+**Example**:
+- 500 lines of Solidity
+- 2 bugs found in audit (1 medium, 1 low)
+- Defect density: (2 / 500) × 1000 = 4 bugs/KLOC
+
+**Industry Targets**:
+- Pre-audit: 10-20 bugs/KLOC (normal)
+- Post-audit: <1 critical bug/KLOC
+- Production: 0 critical bugs (6σ for security)
+
+**When to use**: Smart contract development quality tracking
+
+### LP APY Accuracy
+**Definition**: Variance between projected and actual LP returns
+
+**Formula**: `|Actual APY - Projected APY| / Projected APY × 100`
+
+**Example**:
+- Projected APY: 50%
+- Actual APY (after 1 month annualized): 35%
+- Variance: |35 - 50| / 50 × 100 = 30% error
+
+**Root Causes**:
+- IL not accounted for
+- Fee estimates too optimistic
+- Market volatility changed
+
+**When to use**: LP farming ROI prediction accuracy
+
+### Token Launch Success Rate
+**Definition**: Successful deployments / total attempts
+
+**Formula**: `(Successful Deployments / Total Attempts) × 100`
+
+**Example**:
+- 20 token deployments attempted
+- 18 succeeded (2 failed due to gas issues)
+- Success rate: 90%
+- Target: >95% (3.5σ)
+
+**When to use**: Deployment pipeline reliability
 
 ## Measurement Best Practices
 
