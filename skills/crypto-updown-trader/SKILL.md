@@ -9,16 +9,16 @@ Fully autonomous momentum strategy for Polymarket's "Up or Down" markets. Runs a
 
 ## Supported Markets
 
-| Asset | 5-min | 15-min | Slug Pattern |
-|-------|-------|--------|-------------|
-| BTC | ✅ | ✅ | `btc-updown-{tf}-{ts}` |
-| ETH | ✅ | ✅ | `eth-updown-{tf}-{ts}` |
-| SOL | ✅ | ✅ | `sol-updown-{tf}-{ts}` |
-| XRP | ✅ | ✅ | `xrp-updown-{tf}-{ts}` |
+| Asset | 15-min | Slug Pattern |
+|-------|--------|-------------|
+| BTC | ✅ | `btc-updown-15m-{ts}` |
+| ETH | ✅ | `eth-updown-15m-{ts}` |
+| SOL | ✅ | `sol-updown-15m-{ts}` |
+| XRP | ✅ | `xrp-updown-15m-{ts}` |
 
 **All markets:** Ties resolve UP ("greater than or equal to" = UP wins). This is a structural edge.
 
-Hourly/daily markets do NOT currently exist on Polymarket as of Feb 2026.
+**Note:** Polymarket also has 5-min and daily markets, but this skill focuses on 15-min windows — the sweet spot between signal quality and trade frequency. 5-min is too noisy, daily is too slow for compounding.
 
 ## Architecture: The Machine
 
@@ -94,12 +94,6 @@ Job 3: same with expr "38 * * * *"
 Job 4: same with expr "53 * * * *"
 ```
 
-**For 5-minute markets** — 12 jobs (every 5 min), firing 3 min into each window:
-```
-expr: "3,8,13,18,23,28,33,38,43,48,53,58 * * * *"
-```
-Or use a single cron with `*/5` offset: `"3-58/5 * * * *"`
-
 ### Step 5: Turn it on
 Enable the cron jobs. That's it — the machine runs.
 
@@ -130,7 +124,7 @@ cron list
 | "$50 on BTC, 24 hours" | budget:50, hours:24, tf:15m | ~$1.72/bet, 29 expected bets |
 | "$100 on ETH, 1 week" | budget:100, hours:168, tf:15m | ~$0.50/bet, 202 expected bets |
 | "$20 on SOL, 6 hours" | budget:20, hours:6, tf:15m | ~$2.78/bet, 7 expected bets |
-| "$30 on BTC, 12 hours" | budget:30, hours:12, tf:5m | ~$2.33/bet, 13 expected bets |
+| "$30 on BTC, 12 hours" | budget:30, hours:12, tf:15m | ~$2.78/bet, 11 expected bets |
 
 Budget math: `totalWindows = (hours × 60 / timeframe_minutes)`, `expectedBets = totalWindows × 0.3` (30% selectivity), `betSize = budget / expectedBets`
 
@@ -192,15 +186,6 @@ curl -s "https://gamma-api.polymarket.com/markets?slug=${slug}"
 | **:08/:23/:38/:53** | **Optimal bet time** |
 | Last 2 min | Don't bet (Bankr too slow) |
 | +5-10 min after close | Resolves via Chainlink |
-
-### Market Timing (5m)
-
-| Time | What Happens |
-|------|-------------|
-| :00/:05/:10/... | Window opens (every 5 min) |
-| **:03/:08/:13/...** | **Optimal bet time** (3 min in) |
-| Last 1 min | Don't bet |
-| +2-5 min after close | Resolves |
 
 ## Duplicate Bet Prevention
 
