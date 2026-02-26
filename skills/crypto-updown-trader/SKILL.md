@@ -227,6 +227,7 @@ Redeem via Bankr: `"Redeem my position on '[EXACT TITLE]' on Polymarket"`
 | `cycle.sh` | Full cycle (crons call this) | `--asset btc --timeframe 15m --bet-size 3` |
 | `bet.sh` | Place bet + signal + lock | `UP 3 "" "" btc 15m` |
 | `strategy.js` | Momentum analyzer | `--asset eth --timeframe 5m --dry-run --stats --show-config` |
+| `outcome-tracker.js` | Resolve bets + analytics | `--stats --by-score --by-hour --by-asset --by-direction --sigma` |
 
 ## Signal Broadcasting
 
@@ -247,6 +248,64 @@ Other agents read: `botchan read bets --limit 10 --json`
 6. **Killed CLI ≠ killed job** — Bankr server-side continues
 7. **Keep POL for gas** — ~$2 minimum
 8. **Betting in cron jobs ONLY** — not heartbeats
+
+## Six Sigma Integration (Performance Optimization)
+
+This skill integrates with the six-sigma skill for continuous improvement via DMAIC.
+
+### Setup
+```bash
+# Initialize a six sigma project for your trading
+python3 /path/to/six-sigma/scripts/dmaic_init.py --process "crypto-updown-trader" --goal "Maximize win rate"
+```
+
+### Outcome Tracker
+
+The outcome tracker closes the feedback loop — it resolves pending bets, logs wins/losses, and generates analytics:
+
+```bash
+# Resolve all pending bets and show summary
+node scripts/outcome-tracker.js
+
+# Full performance breakdown
+node scripts/outcome-tracker.js --stats --by-score --by-hour --by-direction --by-asset
+
+# Log metrics to six sigma project
+node scripts/outcome-tracker.js --sigma
+```
+
+**Recommended:** Add `node outcome-tracker.js --sigma` to your cycle.sh so every cron cycle auto-tracks performance.
+
+### Analytics Available
+
+| Flag | Shows |
+|------|-------|
+| `--stats` | Overall win rate, PnL, selectivity, bet count |
+| `--by-score` | Win rate broken down by score bucket (2-3, 3-4, 4+) |
+| `--by-hour` | Win rate by hour of day (ET) — find your best trading hours |
+| `--by-direction` | UP vs DOWN win rates — is the tie edge working? |
+| `--by-asset` | Per-asset performance (BTC vs ETH vs SOL vs XRP) |
+| `--sigma` | Logs metrics to six-sigma-projects for DMAIC tracking |
+
+### What To Watch For
+
+After 50+ bets, use the analytics to:
+
+1. **Score calibration** — if score 2-3 bets win at 80% but score 3-4 only 50%, the middle range might be a trap. Adjust thresholds.
+2. **Time-of-day bias** — if afternoons ET crush but mornings underperform, add time weighting to scores.
+3. **Direction bias** — if DOWN bets consistently lose, consider UP-only mode (exploit tie-resolves-UP edge harder).
+4. **Asset differences** — some assets may trend more predictably than others on short timeframes.
+
+### Improvement Cycle
+
+```
+Run 50 bets → outcome-tracker --stats --by-score --sigma
+  → Identify weakest bucket or pattern
+  → Adjust strategy (threshold, time filter, direction bias)
+  → Log change: improve.py --process crypto-updown-trader --change "description"
+  → Run 50 more bets → compare before/after
+  → Repeat
+```
 
 ## CLI Reference
 
