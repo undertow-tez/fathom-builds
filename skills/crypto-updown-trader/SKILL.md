@@ -201,7 +201,7 @@ If any condition fails, the DOWN signal is **filtered to NO_BET** with explanati
 - Choppy, directionless price action
 - Momentum indicators give false signals
 
-**How to configure:** Set `blackoutHours` in config.json to hours in 24-hour format, relative to the `timezone` field (default `America/New_York`). Empty array `[]` disables the blackout. Set `timezone` to the human's local timezone (e.g., `Europe/London`, `America/Los_Angeles`, `Asia/Tokyo`) so blackout hours and display times are correct for them.
+**How to configure:** Set `blackoutHours` in config.json to hours in 24-hour format. **Blackout hours are always evaluated in US Eastern Time** because the crypto market dead zone is driven by US equity lunch hours — this applies globally regardless of the user's timezone. Set `timezone` to the human's local timezone (e.g., `Europe/London`, `America/Los_Angeles`, `Asia/Tokyo`) for display/reporting times. Empty array `[]` disables the blackout.
 
 ### 4. Score Cap Filter (Momentum Trap Protection)
 
@@ -397,8 +397,8 @@ node strategy.js --asset xrp --timeframe 15m --dry-run --bet-size 2
   "minScore": 3,               // Min |score| to trigger bet
   "maxScore": null,            // Max score cap (null = no cap, 5 recommended)
   "upOnly": false,             // true = never bet DOWN (exploit tie edge only)
-  "timezone": "America/New_York", // Human's local timezone (IANA format)
-  "blackoutHours": [11,12,13], // Local hours to skip (midday death zone)
+  "timezone": "America/New_York", // Human's local timezone for display (IANA format)
+  "blackoutHours": [11,12,13], // ET hours to skip (US market dead zone — always ET)
   "drawdownLimit": 15,         // Max daily loss $ before pause
   "cooldownMinutes": 30,       // Pause duration after 2 consecutive losses
   "signalFeed": "bets",        // Net Protocol feed name

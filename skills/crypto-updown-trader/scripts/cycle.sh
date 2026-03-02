@@ -94,10 +94,10 @@ fi
 # ── Step 2c: Midday blackout ──
 # Read blackoutHours from config (default [11,12,13] if not set)
 BLACKOUT_HOURS=$(node -e "const c=require('$DIR/config.json'); console.log(JSON.stringify(c.blackoutHours || [11,12,13]))")
-TIMEZONE=$(node -e "const c=require('$DIR/config.json'); console.log(c.timezone || 'America/New_York')")
-CURRENT_LOCAL_HOUR=$(TZ="$TIMEZONE" date +'%H' | sed 's/^0//')
-if echo "$BLACKOUT_HOURS" | grep -q "\b$CURRENT_LOCAL_HOUR\b"; then
-  echo "⏸️  BLACKOUT (hours ${BLACKOUT_HOURS} in ${TIMEZONE}) — historically low win rate, sitting out"
+# Blackout hours are ALWAYS evaluated in ET (US market dead zone is global for crypto)
+CURRENT_ET_HOUR=$(TZ=America/New_York date +'%H' | sed 's/^0//')
+if echo "$BLACKOUT_HOURS" | grep -q "\b$CURRENT_ET_HOUR\b"; then
+  echo "⏸️  BLACKOUT (hours ${BLACKOUT_HOURS} ET) — US market dead zone, historically low win rate, sitting out"
   exit 0
 fi
 
