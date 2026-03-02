@@ -1,6 +1,7 @@
 {
   "asset": "btc",
   "assets": ["btc"],
+  "timezone": "America/New_York",
   "timeframe": "15m",
   "betSize": 5,
   "budget": null,
