@@ -1,6 +1,6 @@
 #!/bin/bash
-# BTC 15-min bet: analyze → signal → bet → log
-# Usage: ./bet.sh UP|DOWN [amount] [market_title] [score]
+# Crypto Up/Down bet: analyze → signal → bet → log
+# Usage: ./bet.sh UP|DOWN [amount] [market_title] [score] [asset] [timeframe]
 #
 # Flow: find market → broadcast signal → submit bet (fire-and-forget) → log
 # Signal goes out BEFORE Bankr call so it never gets blocked by API hangs
@@ -13,8 +13,45 @@ DIRECTION="${1:-UP}"
 AMOUNT="${2:-3}"
 MARKET_TITLE="${3:-}"
 SCORE="${4:-}"
+ASSET="${5:-btc}"
+TIMEFRAME="${6:-15m}"
 
-# ── Find current 15-min market ──
+# Asset slug mapping
+case "$ASSET" in
+  btc) ASSET_SLUG="btc"; ASSET_NAME="Bitcoin" ;;
+  eth) ASSET_SLUG="eth"; ASSET_NAME="Ethereum" ;;
+  sol) ASSET_SLUG="sol"; ASSET_NAME="Solana" ;;
+  xrp) ASSET_SLUG="xrp"; ASSET_NAME="XRP" ;;
+  *) echo "❌ Unknown asset: $ASSET"; exit 1 ;;
+esac
+
+# Timeframe → window minutes
+case "$TIMEFRAME" in
+  5m)  WINDOW_MINUTES=5 ;;
+  15m) WINDOW_MINUTES=15 ;;
+  *) echo "❌ Unknown timeframe: $TIMEFRAME"; exit 1 ;;
+esac
+
+# ── Duplicate bet prevention (lock per asset+timeframe+window) ──
+WINDOW_TS=$(python3 -c "
+from datetime import datetime, timezone, timedelta
+now = datetime.now(timezone.utc)
+et = timezone(timedelta(hours=-5))
+now_et = now.astimezone(et)
+wm = (now_et.minute // $WINDOW_MINUTES) * $WINDOW_MINUTES
+ws = now_et.replace(minute=wm, second=0, microsecond=0)
+print(int(ws.astimezone(timezone.utc).timestamp()))
+" 2>/dev/null)
+LOCK_FILE="$DIR/.lock_${ASSET_SLUG}_${TIMEFRAME}_${WINDOW_TS}"
+if [ -f "$LOCK_FILE" ]; then
+  echo "🔒 Bet already placed for ${ASSET_SLUG} ${TIMEFRAME} this window (lock: $LOCK_FILE). Skipping duplicate."
+  exit 0
+fi
+touch "$LOCK_FILE"
+# Clean old lock files (>1 hour old)
+find "$DIR" -name '.lock_*' -mmin +60 -delete 2>/dev/null || true
+
+# ── Find current market ──
 if [ -z "$MARKET_TITLE" ]; then
   MARKET_RESULT=$(python3 -c "
 import json, sys, subprocess
@@ -24,12 +61,12 @@ now = datetime.now(timezone.utc)
 et = timezone(timedelta(hours=-5))
 now_et = now.astimezone(et)
 
-wm = (now_et.minute // 15) * 15
+wm = (now_et.minute // $WINDOW_MINUTES) * $WINDOW_MINUTES
 window_start = now_et.replace(minute=wm, second=0, microsecond=0)
 ts = int(window_start.astimezone(timezone.utc).timestamp())
 
-for offset in [0, -900]:
-    slug = f'btc-updown-15m-{ts + offset}'
+for offset in [0, -($WINDOW_MINUTES * 60)]:
+    slug = f'${ASSET_SLUG}-updown-${TIMEFRAME}-{ts + offset}'
     try:
         r = subprocess.run(['curl', '-s', f'https://gamma-api.polymarket.com/markets?slug={slug}'],
                           capture_output=True, text=True, timeout=10)
@@ -56,8 +93,9 @@ print(f'NONE|No active market|')
 fi
 
 if [ -z "$MARKET_TITLE" ] || [ "$MARKET_STATUS" = "NONE" ]; then
-  echo "❌ No CURRENTLY ACTIVE 15-min BTC market"
-  echo "{\"time\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"direction\":\"$DIRECTION\",\"amount\":\"$AMOUNT\",\"market\":\"NONE\",\"result\":\"no current market\"}" >> "$DIR/bets.jsonl"
+  echo "❌ No CURRENTLY ACTIVE ${ASSET_NAME} ${TIMEFRAME} market"
+  echo "{\"time\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"asset\":\"$ASSET\",\"timeframe\":\"$TIMEFRAME\",\"direction\":\"$DIRECTION\",\"amount\":\"$AMOUNT\",\"market\":\"NONE\",\"result\":\"no current market\"}" >> "$DIR/bets.jsonl"
+  rm -f "$LOCK_FILE"
   exit 1
 fi
 
@@ -65,33 +103,48 @@ TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 echo "📋 Market: $MARKET_TITLE"
 echo "🎯 Betting \$${AMOUNT} ${DIRECTION} @ ${TIMESTAMP}"
 
-# ── Step 1: Broadcast signal to botchan FIRST (before Bankr call) ──
-SIGNAL_MSG="🎯 BTC 15m | ${DIRECTION}"
+# ── Step 1: Broadcast signal to botchan FIRST ──
+SIGNAL_MSG="🎯 ${ASSET_NAME} ${TIMEFRAME} | ${DIRECTION}"
 [ -n "$SCORE" ] && SIGNAL_MSG="${SIGNAL_MSG} (score: ${SCORE})"
 SIGNAL_MSG="${SIGNAL_MSG} | \$${AMOUNT} | ${MARKET_TITLE} | ${TIMESTAMP}"
 
 echo "📡 Broadcasting signal..."
 botchan post bets "$SIGNAL_MSG" --private-key "$PRIMARY_PRIVATE_KEY" 2>&1 &
 SIGNAL_PID=$!
-
-# Give signal 15s to send, don't let it block
 ( sleep 15 && kill $SIGNAL_PID 2>/dev/null ) &
 
-# ── Step 2: Submit bet via Bankr (fire-and-forget with timeout) ──
+# ── Step 2: Submit bet via Bankr (fire-and-forget) ──
 echo "💰 Submitting bet to Bankr..."
 BANKR_PROMPT="Buy \$${AMOUNT} of ${DIRECTION} shares for \"${MARKET_TITLE}\" on Polymarket. Execute the trade."
 
-# Use bankr-submit.sh for async submission (returns jobId immediately)
-SUBMIT_RESULT=$(bash "$DIR/../skills/bankr/scripts/bankr-submit.sh" "$BANKR_PROMPT" 2>&1 || true)
-echo "   Bankr: $SUBMIT_RESULT"
+# Try Bankr CLI first (reads its own config), fall back to raw API script
+if command -v bankr &>/dev/null; then
+  SUBMIT_RESULT=$(bankr "$BANKR_PROMPT" --json 2>&1 || true)
+  echo "   Bankr CLI: $SUBMIT_RESULT"
+  JOB_ID=$(echo "$SUBMIT_RESULT" | python3 -c "import json,sys; print(json.load(sys.stdin).get('jobId',''))" 2>/dev/null || echo "")
+else
+  # Fallback: check multiple config locations
+  for CFG in "$DIR/../bankr/config.json" "$HOME/.openclaw/skills/bankr/config.json" "$HOME/.clawdbot/skills/bankr/config.json"; do
+    if [ -f "$CFG" ]; then
+      BANKR_CONFIG="$CFG"
+      break
+    fi
+  done
+  if [ -n "${BANKR_CONFIG:-}" ]; then
+    APIKEY=$(jq -r '.apiKey' "$BANKR_CONFIG")
+    SUBMIT_RESULT=$(curl -sf -X POST "https://api.bankr.bot/agent/prompt" \
+      -H "X-API-Key: $APIKEY" -H "Content-Type: application/json" \
+      -d "$(jq -nc --arg p "$BANKR_PROMPT" '{prompt: $p}')" 2>&1 || true)
+  else
+    SUBMIT_RESULT='{"error":"No bankr CLI or config found"}'
+  fi
+  echo "   Bankr API: $SUBMIT_RESULT"
+  JOB_ID=$(echo "$SUBMIT_RESULT" | python3 -c "import json,sys; print(json.load(sys.stdin).get('jobId',''))" 2>/dev/null || echo "")
+fi
 
-# Extract jobId for later verification
-JOB_ID=$(echo "$SUBMIT_RESULT" | python3 -c "import json,sys; print(json.load(sys.stdin).get('jobId',''))" 2>/dev/null || echo "")
+# ── Step 3: Log ──
+echo "{\"time\":\"$TIMESTAMP\",\"asset\":\"$ASSET\",\"timeframe\":\"$TIMEFRAME\",\"direction\":\"$DIRECTION\",\"amount\":\"$AMOUNT\",\"market\":\"$MARKET_TITLE\",\"slug\":\"${MARKET_SLUG:-}\",\"score\":\"${SCORE:-}\",\"jobId\":\"$JOB_ID\",\"result\":\"submitted\"}" >> "$DIR/bets.jsonl"
 
-# ── Step 3: Log everything ──
-echo "{\"time\":\"$TIMESTAMP\",\"direction\":\"$DIRECTION\",\"amount\":\"$AMOUNT\",\"market\":\"$MARKET_TITLE\",\"slug\":\"${MARKET_SLUG:-}\",\"score\":\"${SCORE:-}\",\"jobId\":\"$JOB_ID\",\"result\":\"submitted\"}" >> "$DIR/bets.jsonl"
-
-# Wait for signal to finish (up to remaining time)
 wait $SIGNAL_PID 2>/dev/null || true
 
 echo ""

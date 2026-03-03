@@ -1,23 +1,47 @@
 #!/usr/bin/env node
 /**
- * BTC Up/Down 5-Minute Polymarket Strategy
+ * Crypto Up/Down Polymarket Strategy (Multi-Asset)
  * 
- * Analyzes short-term BTC momentum and outputs a signal:
+ * Analyzes short-term momentum for any supported asset and outputs a signal:
  *   BET_UP, BET_DOWN, or NO_BET (when edge is insufficient)
+ * 
+ * Supported assets: BTC, ETH, SOL, XRP (5m and 15m markets)
  * 
  * Edges exploited:
  *   1. Ties resolve UP (structural edge for UP in low-vol periods)
- *   2. Short-term momentum (trend continuation > reversal on 5min)
- *   3. Only bet when indicators align (selective, not every 5 min)
+ *   2. Short-term momentum (trend continuation in short windows)
+ *   3. Only bet when indicators align (selective, not every window)
  * 
- * Usage: node strategy.js [--dry-run] [--bet-size 3]
+ * Usage: node strategy.js [--asset btc] [--timeframe 15m] [--dry-run] [--bet-size 3] [--min-score 2]
  */
 
 const https = require('https');
 const fs = require('fs');
+const path = require('path');
 
 const LOG_FILE = __dirname + '/trade-log.json';
-const BET_SIZE_DEFAULT = 3; // USD
+const CONFIG_FILE = __dirname + '/config.json';
+const BET_SIZE_DEFAULT = 3;
+
+// --- Asset config ---
+const ASSETS = {
+  btc: { symbol: 'BTCUSDT', name: 'Bitcoin', slug: 'btc' },
+  eth: { symbol: 'ETHUSDT', name: 'Ethereum', slug: 'eth' },
+  sol: { symbol: 'SOLUSDT', name: 'Solana', slug: 'sol' },
+  xrp: { symbol: 'XRPUSDT', name: 'XRP', slug: 'xrp' },
+};
+
+const TIMEFRAMES = {
+  '5m':  { minutes: 5,  candleInterval: '1m', candleCount: 30, cronOffsets: [3, 8] },
+  '15m': { minutes: 15, candleInterval: '1m', candleCount: 60, cronOffsets: [8, 23, 38, 53] },
+};
+
+// --- Load config ---
+function loadConfig() {
+  try {
+    return JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+  } catch { return {}; }
+}
 
 // --- Fetch helpers ---
 function fetchJSON(url) {
@@ -34,9 +58,9 @@ function fetchJSON(url) {
   });
 }
 
-// --- Get 1-min candles from Binance US ---
-async function getCandles(limit = 60) {
-  const data = await fetchJSON(`https://api.binance.us/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=${limit}`);
+// --- Get 1-min candles from Binance ---
+async function getCandles(symbol, interval, limit) {
+  const data = await fetchJSON(`https://api.binance.us/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
   return data.map(c => ({
     time: c[0],
     open: parseFloat(c[1]),
@@ -55,7 +79,7 @@ function calcMA(prices, period) {
 }
 
 function calcRSI(prices, period = 14) {
-  if (prices.length < period + 1) return 50; // neutral default
+  if (prices.length < period + 1) return 50;
   let gains = 0, losses = 0;
   for (let i = prices.length - period; i < prices.length; i++) {
     const diff = prices[i] - prices[i - 1];
@@ -88,33 +112,31 @@ function consecutiveDirection(candles, lookback = 5) {
 }
 
 // --- Strategy ---
-function analyzeAndDecide(candles) {
+function analyzeAndDecide(candles, minScore = 2, maxScore = null, upOnly = true) {
   const closes = candles.map(c => c.close);
   const currentPrice = closes[closes.length - 1];
   
-  // Moving averages
   const ma5 = calcMA(closes, 5);
   const ma10 = calcMA(closes, 10);
   const ma20 = calcMA(closes, 20);
-  
-  // RSI
   const rsi = calcRSI(closes, 14);
-  
-  // Volatility (low vol = more ties = UP edge)
   const vol = calcVolatility(candles, 10);
-  const lowVol = vol < 0.0005; // very low movement
-  
-  // Recent direction
+  const lowVol = vol < 0.0005;
   const dir5 = consecutiveDirection(candles, 5);
   const dir10 = consecutiveDirection(candles, 10);
   
-  // Volume trend (rising volume = stronger signal)
   const recentVol = candles.slice(-5).reduce((a, c) => a + c.volume, 0);
   const priorVol = candles.slice(-10, -5).reduce((a, c) => a + c.volume, 0);
   const volRising = recentVol > priorVol * 1.2;
   
-  // --- Scoring system ---
-  let score = 0; // positive = UP, negative = DOWN
+  // --- Hourly trend filter (higher timeframe context) ---
+  // Use the full candle set (~60 1-min candles) to check hourly direction
+  const hourlyStart = candles.length >= 60 ? candles[candles.length - 60].close : candles[0].close;
+  const hourlyChange = (currentPrice - hourlyStart) / hourlyStart;
+  const hourlyTrendDown = hourlyChange < -0.005; // down >0.5% over last hour
+  const hourlyTrendUp = hourlyChange > 0.005;    // up >0.5% over last hour
+  
+  let score = 0;
   const reasons = [];
   
   // 1. MA alignment (strongest signal)
@@ -143,12 +165,12 @@ function analyzeAndDecide(candles) {
     reasons.push(`${dir5.ups}/5 candles UP (weak ${dir5.streak})`);
   }
   
-  // 3. RSI extremes (contrarian at extremes, trend-following in middle)
+  // 3. RSI extremes
   if (rsi > 70) {
-    score -= 1; // overbought, might reverse
+    score -= 1;
     reasons.push(`RSI ${rsi.toFixed(1)} (overbought, caution)`);
   } else if (rsi < 30) {
-    score += 1; // oversold, might bounce
+    score += 1;
     reasons.push(`RSI ${rsi.toFixed(1)} (oversold, potential bounce)`);
   } else if (rsi > 55) {
     score += 0.5;
@@ -170,19 +192,81 @@ function analyzeAndDecide(candles) {
     reasons.push('Rising volume (confirms direction)');
   }
   
-  // --- Decision ---
+  // 6. Hourly trend filter — don't bet UP into a falling market
+  if (hourlyTrendDown && score > 0) {
+    reasons.push(`Hourly trend DOWN (${(hourlyChange * 100).toFixed(2)}%) — UP signal overridden`);
+    score = 0; // Kill the UP signal entirely
+  } else if (hourlyTrendDown) {
+    reasons.push(`Hourly trend DOWN (${(hourlyChange * 100).toFixed(2)}%) — confirms bearish`);
+  } else if (hourlyTrendUp && score > 0) {
+    score += 0.5;
+    reasons.push(`Hourly trend UP (${(hourlyChange * 100).toFixed(2)}%) — confirms bullish`);
+  } else {
+    reasons.push(`Hourly trend: ${(hourlyChange * 100).toFixed(2)}% (neutral)`);
+  }
+  
   const absScore = Math.abs(score);
   let decision, confidence;
   
+  // --- DOWN bet qualification (strict) ---
+  // Ties resolve UP = structural disadvantage for DOWN bets
+  // Only bet DOWN when ALL conditions met:
+  //   1. Score ≤ -4 (strong bearish)
+  //   2. Hourly trend down >0.5% (trend confirmed)
+  //   3. Volatility > 0.05% (price moving, ties unlikely)
+  //   4. RSI 30-45 (bearish but not oversold bounce)
+  const downQualified = (
+    score <= -4 &&
+    hourlyTrendDown &&
+    vol > 0.0005 &&
+    rsi >= 30 && rsi <= 45
+  );
+  
+  if (downQualified) {
+    reasons.push('DOWN QUALIFIED: score ≤-4 + hourly confirms + vol high + RSI 30-45');
+  } else if (score <= -4) {
+    // Log why DOWN didn't qualify
+    const fails = [];
+    if (!hourlyTrendDown) fails.push(`hourly not down enough (${(hourlyChange*100).toFixed(2)}%)`);
+    if (vol <= 0.0005) fails.push(`vol too low (${(vol*100).toFixed(4)}%)`);
+    if (rsi < 30) fails.push(`RSI ${rsi.toFixed(1)} oversold (bounce risk)`);
+    if (rsi > 45) fails.push(`RSI ${rsi.toFixed(1)} not bearish enough`);
+    reasons.push(`DOWN signal but not qualified: ${fails.join(', ')}`);
+  }
+  
   if (absScore >= 3) {
-    decision = score > 0 ? 'BET_UP' : 'BET_DOWN';
-    confidence = 'HIGH';
-  } else if (absScore >= 2) {
-    decision = score > 0 ? 'BET_UP' : 'BET_DOWN';
-    confidence = 'MEDIUM';
+    if (score > 0) {
+      decision = 'BET_UP';
+      confidence = 'HIGH';
+    } else if (downQualified) {
+      decision = 'BET_DOWN';
+      confidence = 'HIGH';
+    } else {
+      decision = 'NO_BET';
+      confidence = 'FILTERED';
+    }
+  } else if (absScore >= minScore) {
+    if (score > 0) {
+      decision = 'BET_UP';
+      confidence = 'MEDIUM';
+    } else {
+      decision = 'NO_BET';
+      confidence = 'FILTERED';
+    }
   } else {
     decision = 'NO_BET';
     confidence = 'LOW';
+  }
+  
+  if (score < 0 && absScore >= minScore && !downQualified) {
+    reasons.push('DOWN signal filtered (strict qualification not met — ties resolve UP)');
+  }
+  
+  // --- Score cap filter (prevent momentum traps) ---
+  if (maxScore !== null && score > maxScore) {
+    reasons.push(`Score ${score.toFixed(2)} > maxScore ${maxScore} — historically 33% win rate (momentum trap risk)`);
+    decision = 'NO_BET';
+    confidence = 'CAPPED';
   }
   
   return {
@@ -204,12 +288,14 @@ function analyzeAndDecide(candles) {
 }
 
 // --- Logging ---
-function logTrade(analysis, betSize, dryRun) {
+function logTrade(analysis, asset, timeframe, betSize, dryRun) {
   let log = [];
   try { log = JSON.parse(fs.readFileSync(LOG_FILE, 'utf8')); } catch {}
   
   log.push({
     ...analysis,
+    asset,
+    timeframe,
     betSize: analysis.decision !== 'NO_BET' ? betSize : 0,
     dryRun,
     resolved: false,
@@ -220,14 +306,16 @@ function logTrade(analysis, betSize, dryRun) {
   return log.length;
 }
 
-function getStats() {
+function getStats(filterAsset) {
   let log = [];
   try { log = JSON.parse(fs.readFileSync(LOG_FILE, 'utf8')); } catch { return null; }
+  
+  if (filterAsset) log = log.filter(l => (l.asset || 'btc') === filterAsset);
   
   const bets = log.filter(l => l.decision !== 'NO_BET' && l.resolved);
   const wins = bets.filter(b => b.result === 'WIN');
   const totalBet = bets.reduce((a, b) => a + (b.betSize || 0), 0);
-  const totalReturn = wins.length * 2 - bets.length; // simplified: win = 2x, lose = 0
+  const totalReturn = wins.length * 2 - bets.length;
   
   return {
     totalBets: bets.length,
@@ -240,31 +328,82 @@ function getStats() {
   };
 }
 
+// --- Budget calculator ---
+function calculateBetSize(budget, durationHours, timeframeMinutes, selectivityRate = 0.3) {
+  const windowsPerHour = 60 / timeframeMinutes;
+  const totalWindows = windowsPerHour * durationHours;
+  const expectedBets = Math.ceil(totalWindows * selectivityRate);
+  return Math.max(1, Math.floor((budget / expectedBets) * 100) / 100);
+}
+
 // --- Main ---
 async function main() {
   const args = process.argv.slice(2);
+  const config = loadConfig();
+  
+  // Parse args (CLI overrides config)
+  const getArg = (flag) => { const i = args.indexOf(flag); return i >= 0 ? args[i + 1] : null; };
+  
+  const asset = (getArg('--asset') || config.asset || 'btc').toLowerCase();
+  const timeframe = getArg('--timeframe') || config.timeframe || '15m';
   const dryRun = args.includes('--dry-run');
-  const betIdx = args.indexOf('--bet-size');
-  const betSize = betIdx >= 0 ? parseFloat(args[betIdx + 1]) : BET_SIZE_DEFAULT;
+  const betSizeArg = getArg('--bet-size') ? parseFloat(getArg('--bet-size')) : null;
+  const minScore = getArg('--min-score') ? parseFloat(getArg('--min-score')) : (config.minScore || 2);
+  const maxScore = getArg('--max-score') ? parseFloat(getArg('--max-score')) : (config.maxScore || null);
   const showStats = args.includes('--stats');
+  const showConfig = args.includes('--show-config');
+  
+  if (showConfig) {
+    const tfConfig = TIMEFRAMES[timeframe];
+    const assetConfig = ASSETS[asset];
+    console.log(JSON.stringify({
+      asset: assetConfig,
+      timeframe: { name: timeframe, ...tfConfig },
+      slugPattern: `${assetConfig.slug}-updown-${timeframe}-{unix_timestamp}`,
+      cronSchedule: tfConfig.cronOffsets.map(o => `${o} * * * *`),
+      tieResolution: 'UP (greater than or equal = UP wins)',
+    }, null, 2));
+    return;
+  }
   
   if (showStats) {
-    const stats = getStats();
+    const stats = getStats(asset);
     console.log(JSON.stringify(stats || { error: 'No trades logged yet' }, null, 2));
     return;
   }
   
-  console.log('📊 Fetching BTC 1-min candles...');
-  const candles = await getCandles(60);
+  const assetConfig = ASSETS[asset];
+  const tfConfig = TIMEFRAMES[timeframe];
+  
+  if (!assetConfig) {
+    console.error(`❌ Unknown asset: ${asset}. Supported: ${Object.keys(ASSETS).join(', ')}`);
+    process.exit(1);
+  }
+  if (!tfConfig) {
+    console.error(`❌ Unknown timeframe: ${timeframe}. Supported: ${Object.keys(TIMEFRAMES).join(', ')}`);
+    process.exit(1);
+  }
+  
+  // Calculate bet size from budget if provided
+  let betSize = betSizeArg || config.betSize || BET_SIZE_DEFAULT;
+  if (!betSizeArg && config.budget && config.budgetDurationHours) {
+    betSize = calculateBetSize(config.budget, config.budgetDurationHours, tfConfig.minutes);
+    console.log(`💰 Budget mode: $${config.budget} over ${config.budgetDurationHours}h → $${betSize}/bet`);
+  }
+  
+  console.log(`📊 Fetching ${assetConfig.name} ${tfConfig.candleInterval} candles...`);
+  const candles = await getCandles(assetConfig.symbol, tfConfig.candleInterval, tfConfig.candleCount);
   
   console.log('🧠 Analyzing...');
-  const analysis = analyzeAndDecide(candles);
+  const upOnly = config.upOnly !== false; // default true
+  const analysis = analyzeAndDecide(candles, minScore, maxScore, upOnly);
   
-  const tradeNum = logTrade(analysis, betSize, dryRun);
+  const tradeNum = logTrade(analysis, asset, timeframe, betSize, dryRun);
   
   console.log('\n' + '='.repeat(50));
   console.log(`🎯 SIGNAL: ${analysis.decision} (${analysis.confidence} confidence)`);
-  console.log(`   Score: ${analysis.score} | BTC: $${analysis.currentPrice.toFixed(2)}`);
+  console.log(`   Asset: ${assetConfig.name} (${timeframe})`);
+  console.log(`   Score: ${analysis.score} (min: ${minScore}) | Price: $${analysis.currentPrice.toFixed(2)}`);
   console.log(`   RSI: ${analysis.rsi} | Vol: ${analysis.volatility}%`);
   console.log(`   MA5: ${analysis.ma5} > MA10: ${analysis.ma10} > MA20: ${analysis.ma20}`);
   console.log(`   Recent: ${analysis.dir5} (5-candle) | ${analysis.dir10} (10-candle)`);
@@ -275,13 +414,13 @@ async function main() {
   
   if (analysis.decision !== 'NO_BET') {
     console.log(`\n💰 ${dryRun ? '[DRY RUN] Would bet' : 'Bet'}: $${betSize} on ${analysis.decision === 'BET_UP' ? 'UP ⬆️' : 'DOWN ⬇️'}`);
-    console.log(`   Trade #${tradeNum}`);
+    console.log(`   Trade #${tradeNum} | ${assetConfig.name} ${timeframe}`);
   } else {
     console.log(`\n⏸️  No bet — insufficient edge. Skipping this round.`);
   }
   
-  // Output machine-readable for automation
-  console.log(`\n__SIGNAL__:${analysis.decision}:${analysis.score}:${analysis.currentPrice}:${betSize}`);
+  // Machine-readable output
+  console.log(`\n__SIGNAL__:${analysis.decision}:${analysis.score}:${analysis.currentPrice}:${betSize}:${asset}:${timeframe}`);
 }
 
 main().catch(err => {
