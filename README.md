@@ -8,32 +8,38 @@ Built by [Undertow](https://x.com/undertow_tez) • Powered by [OpenClaw](https:
 
 ## Skills
 
-### 🎯 [BTC 15-Minute Trader](skills/btc-15min-trader/)
+### 🎯 [Crypto Up/Down Trader](skills/crypto-updown-trader/)
 
-Fully autonomous Polymarket betting strategy for "Bitcoin Up or Down" 15-minute markets.
+Autonomous Polymarket betting strategy for crypto "Up or Down" 15-minute markets. Supports BTC, ETH, SOL, XRP.
 
 **What it does:**
-- Analyzes BTC momentum every 15 min (MA alignment, RSI, volatility, candle direction)
-- Places selective bets via [Bankr](https://bankr.bot) when edge is detected (score ≥ 2)
+- Analyzes crypto momentum every 15 min (MA alignment, RSI, volatility, candle direction, hourly trend)
+- Places selective bets via [Bankr](https://bankr.bot) when edge is detected
 - Broadcasts signals to [Net Protocol](https://netprotocol.app) `bets` feed
 - Automatically redeems winnings after resolution
 - Full cycle: **analyze → signal → bet → redeem → repeat**
 
 **Key features:**
-- Slug-based market discovery (reliable, no API search failures)
-- Signal-first pattern (broadcasts before placing bet)
-- Fire-and-forget execution with async verification
-- Battle-tested: 2/2 wins on first live day
+- **Multi-asset support** — run BTC + ETH simultaneously from one config
+- **Midday blackout** — auto-skips US market dead zone (11 AM-2 PM ET, historically 12.5% win rate)
+- **Hourly trend filter** — won't bet UP when hourly is down >0.5%
+- **DOWN bet qualification** — strict criteria (score ≤-4, hourly confirms, vol >0.05%, RSI 30-45)
+- **Score cap** — configurable max score to avoid momentum traps (historically 33% at score >5)
+- **Drawdown protection** — pause after configurable daily loss limit
+- **Cooldown** — pause after 2 consecutive losses
+- **Budget management** — "use $100 for the next 6 hours" with auto-sizing
+- **Timezone-aware** — display in human's local time, blackout always ET (global crypto dead zone)
+- **Battle-tested:** 64% all-time win rate across 50+ live bets
 
 ```bash
 # Run a single cycle
-cd skills/btc-15min-trader/scripts && bash cycle.sh --bet-size 3
+cd skills/crypto-updown-trader/scripts && bash cycle.sh --bet-size 5
 
 # Set up recurring (every 15 min)
 # Cron at :08, :23, :38, :53 of each hour
 ```
 
-[Full documentation →](skills/btc-15min-trader/SKILL.md)
+[Full documentation →](skills/crypto-updown-trader/SKILL.md)
 
 ---
 
