@@ -10,7 +10,7 @@ source /home/ubuntu/.openclaw/workspace/.cron_env 2>/dev/null || true
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
 DIRECTION="${1:-UP}"
-AMOUNT="${2:-3}"
+AMOUNT="${2:-5}"
 MARKET_TITLE="${3:-}"
 SCORE="${4:-}"
 ASSET="${5:-btc}"
@@ -117,30 +117,24 @@ SIGNAL_PID=$!
 echo "💰 Submitting bet to Bankr..."
 BANKR_PROMPT="Buy \$${AMOUNT} of ${DIRECTION} shares for \"${MARKET_TITLE}\" on Polymarket. Execute the trade."
 
-# Try Bankr CLI first (reads its own config), fall back to raw API script
-if command -v bankr &>/dev/null; then
-  SUBMIT_RESULT=$(bankr "$BANKR_PROMPT" --json 2>&1 || true)
-  echo "   Bankr CLI: $SUBMIT_RESULT"
-  JOB_ID=$(echo "$SUBMIT_RESULT" | python3 -c "import json,sys; print(json.load(sys.stdin).get('jobId',''))" 2>/dev/null || echo "")
-else
-  # Fallback: check multiple config locations
-  for CFG in "$DIR/../bankr/config.json" "$HOME/.openclaw/skills/bankr/config.json" "$HOME/.clawdbot/skills/bankr/config.json"; do
-    if [ -f "$CFG" ]; then
-      BANKR_CONFIG="$CFG"
-      break
-    fi
-  done
-  if [ -n "${BANKR_CONFIG:-}" ]; then
-    APIKEY=$(jq -r '.apiKey' "$BANKR_CONFIG")
-    SUBMIT_RESULT=$(curl -sf -X POST "https://api.bankr.bot/agent/prompt" \
-      -H "X-API-Key: $APIKEY" -H "Content-Type: application/json" \
-      -d "$(jq -nc --arg p "$BANKR_PROMPT" '{prompt: $p}')" 2>&1 || true)
-  else
-    SUBMIT_RESULT='{"error":"No bankr CLI or config found"}'
+# Use Bankr REST API (fire-and-forget, non-blocking) with multi-path config resolution
+BANKR_CONFIG=""
+for CFG in "$DIR/../bankr/config.json" "$HOME/.openclaw/skills/bankr/config.json" "$HOME/.openclaw/workspace/skills/bankr/config.json" "$HOME/.clawdbot/skills/bankr/config.json"; do
+  if [ -f "$CFG" ]; then
+    BANKR_CONFIG="$CFG"
+    break
   fi
-  echo "   Bankr API: $SUBMIT_RESULT"
-  JOB_ID=$(echo "$SUBMIT_RESULT" | python3 -c "import json,sys; print(json.load(sys.stdin).get('jobId',''))" 2>/dev/null || echo "")
+done
+if [ -n "$BANKR_CONFIG" ]; then
+  APIKEY=$(jq -r '.apiKey' "$BANKR_CONFIG")
+  SUBMIT_RESULT=$(curl -sf --max-time 15 -X POST "https://api.bankr.bot/agent/prompt" \
+    -H "X-API-Key: $APIKEY" -H "Content-Type: application/json" \
+    -d "$(jq -nc --arg p "$BANKR_PROMPT" '{prompt: $p}')" 2>&1 || true)
+else
+  SUBMIT_RESULT='{"error":"No bankr config found. Check SKILL.md for setup instructions."}'
 fi
+echo "   Bankr: $SUBMIT_RESULT"
+JOB_ID=$(echo "$SUBMIT_RESULT" | python3 -c "import json,sys; print(json.load(sys.stdin).get('jobId',''))" 2>/dev/null || echo "")
 
 # ── Step 3: Log ──
 echo "{\"time\":\"$TIMESTAMP\",\"asset\":\"$ASSET\",\"timeframe\":\"$TIMEFRAME\",\"direction\":\"$DIRECTION\",\"amount\":\"$AMOUNT\",\"market\":\"$MARKET_TITLE\",\"slug\":\"${MARKET_SLUG:-}\",\"score\":\"${SCORE:-}\",\"jobId\":\"$JOB_ID\",\"result\":\"submitted\"}" >> "$DIR/bets.jsonl"

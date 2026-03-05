@@ -1,15 +1,17 @@
 {
   "asset": "btc",
-  "assets": ["btc"],
+  "assets": [
+    "btc"
+  ],
   "timezone": "America/New_York",
   "timeframe": "15m",
   "betSize": 5,
   "budget": null,
   "budgetDurationHours": null,
-  "minScore": 3,
+  "minScore": 2,
   "maxScore": null,
   "upOnly": false,
-  "blackoutHours": [11, 12, 13],
+  "blackoutHours": [],
   "drawdownLimit": 15,
   "cooldownMinutes": 30,
   "signalFeed": "bets",

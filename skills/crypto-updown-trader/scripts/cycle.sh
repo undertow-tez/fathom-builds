@@ -84,7 +84,7 @@ for line in sys.stdin:
     except: pass
 print(total)
 " 2>/dev/null || echo "0")
-NET_PNL=$(python3 -c "print(round(float('${TODAY_WINS}') * 0.9 - float('${TODAY_LOSSES}'), 2))")
+NET_PNL=$(python3 -c "w=float('${TODAY_WINS}' or '0'); l=float('${TODAY_LOSSES}' or '0'); print(round(w*0.9 - l, 2))" 2>/dev/null || echo "0")
 echo "📊 Today's P&L: +\$${TODAY_WINS} wins, -\$${TODAY_LOSSES} losses = net \$${NET_PNL}"
 if python3 -c "exit(0 if float('${NET_PNL}') < -${DRAWDOWN_LIMIT} else 1)" 2>/dev/null; then
   echo "🛑 DRAWDOWN PAUSE: Net loss exceeds \$${DRAWDOWN_LIMIT} today — skipping bet"
@@ -147,23 +147,65 @@ print(int(t.timestamp()))
   fi
 fi
 
-  # ── Step 3: Execute bet if signal is good ──
+  # ── Step 3: Build win rate stats for notification ──
+  WINS=$(grep "✅ WON" "$DIR/bets.jsonl" 2>/dev/null | wc -l)
+  LOSSES=$(grep "❌ LOST" "$DIR/bets.jsonl" 2>/dev/null | wc -l)
+  TOTAL_RESOLVED=$((WINS + LOSSES))
+  if [ "$TOTAL_RESOLVED" -gt 0 ]; then
+    WR=$(python3 -c "print(f'{($WINS/$TOTAL_RESOLVED)*100:.1f}')" 2>/dev/null || echo "?")
+  else
+    WR="0"
+  fi
+  PNL=$(python3 -c "
+import json
+w,l=0,0
+for line in open('$DIR/bets.jsonl'):
+    line=line.strip()
+    if not line: continue
+    try:
+        d=json.loads(line)
+        a=float(d.get('amount',0))
+        if '✅ WON' in d.get('result',''):w+=a
+        elif '❌ LOST' in d.get('result',''):l+=a
+    except:pass
+print(f'+\${w-l:.0f}' if w>=l else f'-\${l-w:.0f}')
+" 2>/dev/null || echo "\$?")
+
+  # ── Step 3b: Parse extra details for notification ──
+  RSI=$(echo "$STRATEGY_OUTPUT" | grep "RSI:" | head -1 | sed 's/.*RSI: \([0-9.]*\).*/\1/')
+  VOL=$(echo "$STRATEGY_OUTPUT" | grep "Vol:" | head -1 | sed 's/.*Vol: \([0-9.]*\).*/\1/')
+  MA_ALIGN="mixed"
+  echo "$STRATEGY_OUTPUT" | grep -q "MA5>MA10>MA20" && MA_ALIGN="bullish"
+  echo "$STRATEGY_OUTPUT" | grep -q "MA5<MA10<MA20" && MA_ALIGN="bearish"
+  DIR5=$(echo "$STRATEGY_OUTPUT" | grep "5-candle" | head -1 | sed 's/.*: \([0-9/]* UP\).*/\1/')
+
+  # Build reason string
+  REASON=""
+  [ "$MA_ALIGN" = "bearish" ] && REASON="downtrend"
+  [ "$MA_ALIGN" = "bullish" ] && REASON="uptrend"
+  if [ -n "$RSI" ] && python3 -c "import sys; sys.exit(0 if float('${RSI}')>70 else 1)" 2>/dev/null; then REASON="${REASON:+$REASON, }RSI overbought ${RSI}"; fi
+  if [ -n "$RSI" ] && python3 -c "import sys; sys.exit(0 if float('${RSI}')<30 else 1)" 2>/dev/null; then REASON="${REASON:+$REASON, }RSI oversold ${RSI}"; fi
+  [ -z "$REASON" ] && REASON="no edge"
+
+  # ── Step 3c: Execute or skip ──
   if [ "$DECISION" = "NO_BET" ]; then
     echo ""
     echo "⏸️  No edge detected for $ASSET — skipping this window"
-    # Log skip for counterfactual analysis
-    RSI=$(echo "$STRATEGY_OUTPUT" | grep "RSI:" | head -1 | sed 's/.*RSI: \([0-9.]*\).*/\1/')
-    VOL=$(echo "$STRATEGY_OUTPUT" | grep "Vol:" | head -1 | sed 's/.*Vol: \([0-9.]*\).*/\1/')
-    MA_ALIGN="mixed"
-    echo "$STRATEGY_OUTPUT" | grep -q "MA5>MA10>MA20" && MA_ALIGN="bullish"
-    echo "$STRATEGY_OUTPUT" | grep -q "MA5<MA10<MA20" && MA_ALIGN="bearish"
-    DIR5=$(echo "$STRATEGY_OUTPUT" | grep "5-candle" | head -1 | sed 's/.*: \([0-9/]* UP\).*/\1/')
     node "$DIR/skip-tracker.js" --log --asset "$ASSET" --price "$PRICE" --score "$SCORE" --rsi "${RSI:-0}" --vol "${VOL:-0}" --ma "$MA_ALIGN" --dir5 "${DIR5:-}" 2>/dev/null || true
+    # Notify on skip
+    ASSET_UP=$(echo "$ASSET" | tr '[:lower:]' '[:upper:]')
+    PING="🎰 ${ASSET_UP} 15m | SKIP | \$$(printf '%.0f' "$PRICE") | score ${SCORE} | ${REASON} | ${WR}% WR (${WINS}W/${LOSSES}L) ${PNL}"
+    bash "$DIR/notify.sh" "$PING" 2>/dev/null &
   else
     DIRECTION=$([ "$DECISION" = "BET_UP" ] && echo "UP" || echo "DOWN")
+    ARROW=$([ "$DIRECTION" = "UP" ] && echo "⬆️" || echo "⬇️")
     echo ""
     echo "🚀 Executing: $DIRECTION \$${BET_SIZE} for $ASSET (score: $SCORE)"
     bash "$DIR/bet.sh" "$DIRECTION" "$BET_SIZE" "" "$SCORE"
+    # Notify on bet
+    ASSET_UP=$(echo "$ASSET" | tr '[:lower:]' '[:upper:]')
+    PING="🎰 ${ASSET_UP} 15m | ${DIRECTION} ${ARROW} | \$$(printf '%.0f' "$PRICE") | score ${SCORE} | \$${BET_SIZE} bet placed | ${WR}% WR (${WINS}W/${LOSSES}L) ${PNL}"
+    bash "$DIR/notify.sh" "$PING" 2>/dev/null &
   fi
   echo ""
 done

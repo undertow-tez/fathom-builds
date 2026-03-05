@@ -120,6 +120,9 @@ else:
   # Log result
   echo "{\"time\":\"$TIMESTAMP\",\"slug\":\"$SLUG\",\"market\":\"$MARKET_TITLE\",\"action\":\"redeem\",\"winner\":\"$WINNER\",\"ourBet\":\"$OUR_DIR\",\"amount\":\"$OUR_AMT\",\"result\":\"$RESULT_MSG\",\"redeemJob\":\"$REDEEM_JOB\"}" >> "$BETS_FILE"
   
+  # Notify via Telegram
+  bash "$DIR/notify.sh" "${RESULT_MSG} BTC \$${OUR_AMT} ${OUR_DIR} (winner: ${WINNER})" 2>/dev/null &
+  
   RESOLVED=$((RESOLVED + 1))
   sleep 2  # Don't hammer Bankr API
   
