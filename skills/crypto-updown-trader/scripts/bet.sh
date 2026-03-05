@@ -6,7 +6,7 @@
 # Signal goes out BEFORE Bankr call so it never gets blocked by API hangs
 
 set -euo pipefail
-source /home/ubuntu/.openclaw/workspace/.cron_env 2>/dev/null || true
+source ~/.openclaw/workspace/.cron_env 2>/dev/null || true
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
 DIRECTION="${1:-UP}"
@@ -143,4 +143,52 @@ wait $SIGNAL_PID 2>/dev/null || true
 
 echo ""
 echo "✅ Signal broadcast + bet submitted (jobId: $JOB_ID)"
-echo "   Verify position in ~2 min"
+echo "   Polling for share confirmation in background..."
+
+# Background: poll Bankr job for share count, update bets.jsonl when done
+if [ -n "$JOB_ID" ]; then
+  (
+    RESULT_TEXT=$(bash "$DIR/poll-job.sh" "$JOB_ID" 300 2>/dev/null || echo "")
+    if [ -n "$RESULT_TEXT" ]; then
+      # Parse share count: "9.803921 shares" / "bought X shares"
+      SHARES=$(echo "$RESULT_TEXT" | python3 -c "
+import re, sys
+text = sys.stdin.read()
+patterns = [
+    r'(\d+\.?\d*)\s+shares',
+    r'bought[^\d]*(\d+\.?\d*)',
+]
+for pat in patterns:
+    m = re.search(pat, text, re.IGNORECASE)
+    if m:
+        val = float(m.group(1))
+        if 0.01 < val < 10000:
+            print(f'{val:.6f}')
+            break
+" 2>/dev/null || echo "")
+      if [ -n "$SHARES" ]; then
+        # Update the bets.jsonl entry for this slug to add shares field
+        python3 -c "
+import json, sys
+lines = open('$DIR/bets.jsonl').readlines()
+out = []
+for line in lines:
+    line = line.strip()
+    if not line:
+        out.append(line)
+        continue
+    try:
+        d = json.loads(line)
+        if d.get('jobId') == '$JOB_ID' and d.get('result') == 'submitted':
+            d['shares'] = '$SHARES'
+            line = json.dumps(d)
+    except:
+        pass
+    out.append(line)
+open('$DIR/bets.jsonl', 'w').write('\n'.join(out) + '\n')
+" 2>/dev/null || true
+        echo "📊 Shares confirmed: $SHARES (jobId: $JOB_ID)" >> /tmp/btc-bet.log
+      fi
+    fi
+  ) &
+fi

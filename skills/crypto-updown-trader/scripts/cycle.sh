@@ -6,9 +6,17 @@
 # Usage: ./cycle.sh [--bet-size 3]
 
 set -euo pipefail
-source /home/ubuntu/.openclaw/workspace/.cron_env 2>/dev/null || true
+source ~/.openclaw/workspace/.cron_env 2>/dev/null || true
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# ── Machine on/off flag ──
+# To stop: rm ~/.openclaw/workspace/btc-5min/.enabled
+# To start: touch ~/.openclaw/workspace/btc-5min/.enabled
+if [ ! -f "$DIR/.enabled" ]; then
+  exit 0
+fi
+
 BET_SIZE="${2:-3}"
 
 # Parse args
@@ -60,7 +68,12 @@ bash "$DIR/redeem-all.sh" 2>&1 || true
 # Read drawdownLimit from config (default 15 if not set)
 DRAWDOWN_LIMIT=$(node -e "const c=require('$DIR/config.json'); console.log(c.drawdownLimit || 15)")
 TODAY=$(date -u +'%Y-%m-%d')
-TODAY_LOSSES=$(grep "$TODAY" "$DIR/bets.jsonl" 2>/dev/null | grep "❌ LOST" | python3 -c "
+# Use pnl.js for accurate accounting; fall back to estimate if it fails
+PNL_OUTPUT=$(node "$DIR/pnl.js" --today 2>/dev/null || echo "")
+NET_PNL=$(echo "$PNL_OUTPUT" | grep "Net profit" | grep -oP '[+-]?\$[\d.]+' | tr -d '$' | head -1 || echo "")
+if [ -z "$NET_PNL" ]; then
+  # Fallback estimate
+  TODAY_LOSSES=$(grep "$TODAY" "$DIR/bets.jsonl" 2>/dev/null | grep "❌ LOST" | python3 -c "
 import json, sys
 total = 0
 for line in sys.stdin:
@@ -72,7 +85,7 @@ for line in sys.stdin:
     except: pass
 print(total)
 " 2>/dev/null || echo "0")
-TODAY_WINS=$(grep "$TODAY" "$DIR/bets.jsonl" 2>/dev/null | grep "✅ WON" | python3 -c "
+  TODAY_WINS=$(grep "$TODAY" "$DIR/bets.jsonl" 2>/dev/null | grep "✅ WON" | python3 -c "
 import json, sys
 total = 0
 for line in sys.stdin:
@@ -84,7 +97,8 @@ for line in sys.stdin:
     except: pass
 print(total)
 " 2>/dev/null || echo "0")
-NET_PNL=$(python3 -c "w=float('${TODAY_WINS}' or '0'); l=float('${TODAY_LOSSES}' or '0'); print(round(w*0.9 - l, 2))" 2>/dev/null || echo "0")
+  NET_PNL=$(python3 -c "w=float('${TODAY_WINS}' or '0'); l=float('${TODAY_LOSSES}' or '0'); print(round(w - l, 2))" 2>/dev/null || echo "0")
+fi
 echo "📊 Today's P&L: +\$${TODAY_WINS} wins, -\$${TODAY_LOSSES} losses = net \$${NET_PNL}"
 if python3 -c "exit(0 if float('${NET_PNL}') < -${DRAWDOWN_LIMIT} else 1)" 2>/dev/null; then
   echo "🛑 DRAWDOWN PAUSE: Net loss exceeds \$${DRAWDOWN_LIMIT} today — skipping bet"

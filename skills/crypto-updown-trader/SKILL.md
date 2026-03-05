@@ -281,14 +281,77 @@ curl -s "https://gamma-api.polymarket.com/markets?slug=${slug}"
 
 Redeem via Bankr: `"Redeem my position on '[EXACT TITLE]' on Polymarket"`
 
+## Machine Control (Start / Stop)
+
+The cron stays permanently in crontab — never remove it. `cycle.sh` checks for a `.enabled` flag file at startup and exits silently if missing.
+
+```bash
+# Start the machine
+bash scripts/machine.sh start
+
+# Stop the machine
+bash scripts/machine.sh stop
+
+# Check status
+bash scripts/machine.sh status
+```
+
+When you tell your agent "start/stop the BTC machine" — it runs `machine.sh start/stop`. No crontab editing required.
+
+## Real P&L Accounting
+
+The old P&L formula (`wins × 0.9 - losses`) was an estimate. The new `pnl.js` uses:
+- **Actual payout** from Bankr job polling (stored in bets.jsonl as `payout` field)
+- **Share count** from bet confirmation (stored as `shares` field)
+- Falls back to estimated share price (`$0.53 UP / $0.47 DOWN`) for older bets
+
+```bash
+node scripts/pnl.js           # All-time P&L
+node scripts/pnl.js --today   # Today only
+node scripts/pnl.js --full    # Per-bet breakdown
+```
+
+**Why UP shares cost $0.53+:** Polymarket prices in the structural tie edge. UP shares cost more than $0.50 because the market knows ties resolve UP. You get fewer shares per dollar but still win more often.
+
+## Local Price Feed (Optional — Faster Signals)
+
+On dedicated hardware (like a home server or mini PC), run the WebSocket price feed for real-time candles instead of polling REST every 5 minutes:
+
+```bash
+# Start manually
+node scripts/price-feed/feed.js btc
+
+# Install as systemd service (Linux, requires sudo)
+bash scripts/price-feed/install.sh btc
+```
+
+**How it integrates:** `strategy.js` checks for `price-feed/candles-{asset}.json` first. If found and fresh (<3 min old), it uses the local cache. If missing or stale, it falls back to Binance REST automatically. **No config change needed** — it's transparent.
+
+**Supports multiple assets:**
+```bash
+node scripts/price-feed/feed.js btc,eth,sol
+```
+
+**What you gain:**
+- Candle data updated every second (vs every 5 min via REST)
+- 120 candles of history always available locally
+- No Binance rate limit risk
+- Faster, more accurate MA/RSI calculations
+
 ## Scripts
 
 | Script | Purpose | Key Args |
 |--------|---------|----------|
-| `cycle.sh` | Full cycle (crons call this) | `--asset btc --timeframe 15m --bet-size 3` |
-| `bet.sh` | Place bet + signal + lock | `UP 3 "" "" btc 15m` |
-| `strategy.js` | Momentum analyzer | `--asset eth --timeframe 5m --dry-run --stats --show-config` |
-| `outcome-tracker.js` | Resolve bets + analytics | `--stats --by-score --by-hour --by-asset --by-direction --sigma` |
+| `cycle.sh` | Full cycle (crons call this) | `--bet-size 5` |
+| `machine.sh` | Start / stop the machine | `start`, `stop`, `status` |
+| `bet.sh` | Place bet + signal + lock | `UP 5 "" "" btc 15m` |
+| `redeem-all.sh` | Sweep + redeem resolved bets | — |
+| `poll-job.sh` | Poll Bankr job to completion | `<jobId> [max_seconds]` |
+| `pnl.js` | Actual P&L from bets.jsonl | `--today`, `--full` |
+| `strategy.js` | Momentum analyzer | `--asset eth --dry-run --stats` |
+| `outcome-tracker.js` | Resolve bets + analytics | `--stats --by-score --by-hour` |
+| `price-feed/feed.js` | WebSocket candle feed | `btc` or `btc,eth,sol` |
+| `price-feed/install.sh` | Install feed as systemd service | `btc` |
 
 ## Signal Broadcasting
 

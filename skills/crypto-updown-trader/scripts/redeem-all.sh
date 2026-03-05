@@ -4,7 +4,7 @@
 # Run this at every cycle to clear the backlog
 
 set -euo pipefail
-source /home/ubuntu/.openclaw/workspace/.cron_env 2>/dev/null || true
+source ~/.openclaw/workspace/.cron_env 2>/dev/null || true
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
 BETS_FILE="$DIR/bets.jsonl"
@@ -114,11 +114,45 @@ else:
   fi
   
   # Submit redeem to Bankr
-  REDEEM_RESULT=$(bash "$DIR/../skills/bankr/scripts/bankr-submit.sh" "Redeem my position on '${MARKET_TITLE}' on Polymarket" 2>&1 || true)
-  REDEEM_JOB=$(echo "$REDEEM_RESULT" | python3 -c "import json,sys; print(json.load(sys.stdin).get('jobId',''))" 2>/dev/null || echo "unknown")
-  
-  # Log result
-  echo "{\"time\":\"$TIMESTAMP\",\"slug\":\"$SLUG\",\"market\":\"$MARKET_TITLE\",\"action\":\"redeem\",\"winner\":\"$WINNER\",\"ourBet\":\"$OUR_DIR\",\"amount\":\"$OUR_AMT\",\"result\":\"$RESULT_MSG\",\"redeemJob\":\"$REDEEM_JOB\"}" >> "$BETS_FILE"
+  REDEEM_SUBMIT=$(bash "$DIR/../skills/bankr/scripts/bankr-submit.sh" "Redeem my position on '${MARKET_TITLE}' on Polymarket" 2>&1 || true)
+  REDEEM_JOB=$(echo "$REDEEM_SUBMIT" | python3 -c "import json,sys; print(json.load(sys.stdin).get('jobId',''))" 2>/dev/null || echo "")
+
+  # Poll for actual payout amount (non-blocking: runs in background, updates log when done)
+  ACTUAL_PAYOUT=""
+  if [ -n "$REDEEM_JOB" ] && [ "$RESULT_MSG" = "✅ WON" ]; then
+    # Poll up to 3 min for redemption confirmation
+    REDEEM_TEXT=$(bash "$DIR/poll-job.sh" "$REDEEM_JOB" 180 2>/dev/null || echo "")
+    if [ -n "$REDEEM_TEXT" ]; then
+      # Parse dollar amount from text: "redeemed $5.32" / "claimed 5.32 USDC" / "received $5.32"
+      ACTUAL_PAYOUT=$(echo "$REDEEM_TEXT" | python3 -c "
+import re, sys
+text = sys.stdin.read()
+# Match patterns like: $5.32, 5.32 USDC, 5.32 usdc
+patterns = [
+    r'redeemed[^\d]*(\d+\.?\d*)',
+    r'claimed[^\d]*(\d+\.?\d*)',
+    r'received[^\d]*(\d+\.?\d*)',
+    r'\\\$(\d+\.?\d*)',
+    r'(\d+\.?\d*)\s*USDC',
+]
+for pat in patterns:
+    m = re.search(pat, text, re.IGNORECASE)
+    if m:
+        val = float(m.group(1))
+        if 0.01 < val < 1000:  # sanity check
+            print(f'{val:.4f}')
+            break
+" 2>/dev/null || echo "")
+    fi
+  fi
+
+  # Log result — include payout if we got it
+  if [ -n "$ACTUAL_PAYOUT" ]; then
+    echo "{\"time\":\"$TIMESTAMP\",\"slug\":\"$SLUG\",\"market\":\"$MARKET_TITLE\",\"action\":\"redeem\",\"winner\":\"$WINNER\",\"ourBet\":\"$OUR_DIR\",\"amount\":\"$OUR_AMT\",\"result\":\"$RESULT_MSG\",\"redeemJob\":\"$REDEEM_JOB\",\"payout\":\"$ACTUAL_PAYOUT\"}" >> "$BETS_FILE"
+    echo "    💰 Actual payout: \$$ACTUAL_PAYOUT"
+  else
+    echo "{\"time\":\"$TIMESTAMP\",\"slug\":\"$SLUG\",\"market\":\"$MARKET_TITLE\",\"action\":\"redeem\",\"winner\":\"$WINNER\",\"ourBet\":\"$OUR_DIR\",\"amount\":\"$OUR_AMT\",\"result\":\"$RESULT_MSG\",\"redeemJob\":\"$REDEEM_JOB\"}" >> "$BETS_FILE"
+  fi
   
   # Notify via Telegram
   bash "$DIR/notify.sh" "${RESULT_MSG} BTC \$${OUR_AMT} ${OUR_DIR} (winner: ${WINNER})" 2>/dev/null &

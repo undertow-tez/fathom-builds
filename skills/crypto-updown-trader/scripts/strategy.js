@@ -19,6 +19,30 @@ const fs = require('fs');
 const LOG_FILE = __dirname + '/trade-log.json';
 const BET_SIZE_DEFAULT = 3; // USD
 
+// --- Price feed cache (local WebSocket feed → faster, no rate limits) ---
+const PRICE_FEED_DIR = __dirname + '/price-feed';
+
+function getCandlesFromCache(asset = 'btc', limit = 60) {
+  const cachePath = `${PRICE_FEED_DIR}/candles-${asset}.json`;
+  try {
+    if (!fs.existsSync(cachePath)) return null;
+    const stat = fs.statSync(cachePath);
+    const ageMs = Date.now() - stat.mtimeMs;
+    // Reject cache if older than 3 minutes (feed probably down)
+    if (ageMs > 180000) {
+      console.log(`⚠️  Price feed cache stale (${Math.round(ageMs/1000)}s old) — falling back to REST`);
+      return null;
+    }
+    const raw = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
+    const candles = raw.candles || [];
+    if (candles.length < 20) return null; // not enough data yet
+    console.log(`⚡ Using local price feed cache (${candles.length} candles, ${Math.round(ageMs/1000)}s old)`);
+    return candles.slice(-limit);
+  } catch {
+    return null;
+  }
+}
+
 // --- Fetch helpers ---
 function fetchJSON(url) {
   return new Promise((resolve, reject) => {
@@ -34,9 +58,17 @@ function fetchJSON(url) {
   });
 }
 
-// --- Get 1-min candles from Binance US ---
-async function getCandles(limit = 60) {
-  const data = await fetchJSON(`https://api.binance.us/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=${limit}`);
+// --- Get 1-min candles: local cache first, REST fallback ---
+async function getCandles(limit = 60, asset = 'btc') {
+  // Try local price feed cache first
+  const cached = getCandlesFromCache(asset, limit);
+  if (cached) return cached;
+
+  // Fallback: Binance REST API
+  console.log(`📡 Fetching from Binance REST API (price feed not running)...`);
+  const symbolMap = { btc: 'BTCUSDT', eth: 'ETHUSDT', sol: 'SOLUSDT', xrp: 'XRPUSDT' };
+  const symbol = symbolMap[asset.toLowerCase()] || 'BTCUSDT';
+  const data = await fetchJSON(`https://api.binance.us/api/v3/klines?symbol=${symbol}&interval=1m&limit=${limit}`);
   return data.map(c => ({
     time: c[0],
     open: parseFloat(c[1]),
@@ -254,8 +286,11 @@ async function main() {
     return;
   }
   
-  console.log('📊 Fetching BTC 1-min candles...');
-  const candles = await getCandles(60);
+  const assetIdx = args.indexOf('--asset');
+  const asset = assetIdx >= 0 ? args[assetIdx + 1].toLowerCase() : 'btc';
+
+  console.log(`📊 Fetching ${asset.toUpperCase()} 1-min candles...`);
+  const candles = await getCandles(60, asset);
   
   console.log('🧠 Analyzing...');
   const analysis = analyzeAndDecide(candles);
