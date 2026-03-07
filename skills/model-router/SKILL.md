@@ -1,133 +1,126 @@
 # Model Router Skill
 
-**3-tier routing between Qwen3 (local), Claude Sonnet, and Claude Opus — based on task type and consequence.**
+**3-tier model routing based on task type and consequence.**
 
-Built for Fathom's setup: Qwen3:8b running locally on the Bathysphere, Claude via Anthropic Pro.
-
----
-
-## The Core Principle
-
-Route on **task type and consequence**, not complexity alone.
-
-- **Opus is not a fallback for Sonnet** — they're on the same API. If the API fails, both fail. Opus is a deliberate *upgrade* for tasks that warrant it.
-- **Qwen3 is the only true fallback** — different path entirely (local, no API dependency).
-- **Sonnet is the default** — handles the majority of reasoning, conversation, and planning.
+Built for Fathom's setup: Qwen3:8b local on Bathysphere, Claude Sonnet + Opus via Anthropic Pro.
 
 ---
 
 ## The Three Tiers
 
-### 🏠 Qwen3:8b — Local, Free, Mechanical
-Use when the task is routine, formulaic, and **no one is reading the output critically.**
+| Tier | Model | When |
+|---|---|---|
+| 🏠 Qwen3 | `ollama/qwen3:8b` | Mechanical, no stakes, no judgment |
+| ⚡ Sonnet | `anthropic/claude-sonnet-4-6` | Default — reasoning, conversation, planning |
+| 🔥 Opus | `anthropic/claude-opus-4-6` | Explicit opt-in — high-stakes, complex, irreversible |
 
-- Heartbeat acks (HEARTBEAT_OK)
-- Price lookups, balance checks
-- File ops — update STATE.md, write daily notes, append logs
-- Machine/process status checks
-- Formulaic social posts (template-based)
-- Data formatting, parsing, grep/extract
-- Routine cron tasks — git push, workspace sync
-
-**Qwen3 ceiling:** The moment you need to *reason about why*, *decide whether*, or *write something Undertow will read* — stop, go up.
-
-### ⚡ Sonnet — Default, Most Tasks
-Use for everything that needs real reasoning but isn't high-stakes enough for Opus.
-
-- All direct conversation with Undertow
-- BTC/ETH signal analysis (interpreting data, not placing bets)
-- General coding, debugging single files
-- Planning, research, synthesis
-- Social posts with actual voice/judgment
-- Most MintrBot development
-- Anything you're unsure about — Sonnet is the safe default
-
-### 🔥 Opus — Explicit Upgrade, High Stakes
-Use deliberately when the task is irreversible, deeply creative, or consequential.
-
-- **Executing trades/bets** — money is moving
-- **Project Marfa creative work** — narrative, script, voice design, act structure
-- **Architectural decisions** — system design, migrations, overhauls
-- **Security-critical ops** — contract deployment, wallet operations
-- **Strategic pivots** — "should we quit X and do Y instead"
-- **Complex production debugging** — multi-file, multi-repo, traced failures
-
-**Opus is not a fallback. It's a choice.**
+**Fallback chain (API failure only):** Sonnet → Qwen3  
+**Opus is never a fallback.** It's a deliberate upgrade, not a safety net.
 
 ---
 
-## Fallback Chain (API failure only)
+## Core Principle
 
-```
-Sonnet → Qwen3 (automatic, if Anthropic API fails)
-```
+Route on **consequence and task type**, not just complexity.
 
-Opus does NOT appear in the fallback chain. If Sonnet fails, Opus would too.
+A trading execution might look "simple" (one API call) but the stakes are real → Opus.  
+A 500-word botchan post requires more tokens than a heartbeat ack but has no consequences → Sonnet.  
+A heartbeat that outputs HEARTBEAT_OK → Qwen3. Don't hire a surgeon to wave at you.
 
 ---
 
 ## Decision Tree
 
-```
-Is this mechanical/formulaic with no judgment required?
-  → QWEN3
+### Use 🏠 Qwen3 when ALL are true:
+- Undertow won't read/judge this output
+- No financial stakes
+- No creative judgment needed
+- Mechanical: fetch, check, format, write, ack
 
-Is this irreversible, high-stakes, deeply creative, or strategic?
-  → OPUS
+**Qwen3 task list:**
+- Heartbeat acks (HEARTBEAT_OK)
+- Price lookups and balance checks
+- Updating STATE.md, memory files, logs
+- Machine/process status checks (is cron running?)
+- Data formatting and log parsing
+- Routine git commits and file ops
+- Formulaic social posts from a template
 
-Everything else:
-  → SONNET
-```
-
-One more check before Sonnet vs Opus:
-> "Would a wrong answer here cost money, trust, or be hard to undo?"
-> Yes → Opus. No → Sonnet.
+**Qwen3 ceiling:** If you're reasoning about *why* or *whether* (not just *what*) — stop, use Sonnet.
 
 ---
 
-## Using the Router Script
+### Use ⚡ Sonnet (default) for everything in between:
+- Direct conversations with Undertow
+- BTC/ETH signal analysis (interpretation, not execution)
+- Standard coding and debugging
+- Planning and research
+- Social posts requiring voice and judgment
+- Portfolio reviews and summaries
+- MintrBot development
+- Most multi-step tasks
 
+---
+
+### Use 🔥 Opus when the task is:
+- **Executing a real money trade** — Polymarket bets, swaps, transfers
+- **Security-critical** — contract deployment, wallet ops, key management
+- **Architecturally consequential** — system redesign, migration, full refactor
+- **Deep Project Marfa creative** — narrative script, voice design, act structure
+- **Genuinely hard to reverse** — if a mistake costs money, trust, or weeks of work
+- **Strategic with real consequences** — pivot decisions, launch decisions, investment calls
+
+**Opus rule:** Would you want the best possible reasoning here, or just good reasoning?  
+If "best possible" matters — use Opus.
+
+---
+
+## How to Use
+
+### Quick classification
 ```bash
-# Returns model id (for use in scripts/cron)
-node router.js "fetch btc price and write to state.md"
+node router.js "describe the task"
 # → ollama/qwen3:8b
 
-# Human-readable explanation
-node router.js --explain "place a bet on polymarket btc up"
-# 🔥 anthropic/claude-opus-4-6 — executing a financial trade
+node router.js --explain "place a bet on BTC up"
+# → 🔥 anthropic/claude-opus-4-6
+# → Reason: executing a financial trade
 
-# JSON output (for programmatic use)
-node router.js --json "analyze the signal and tell me what you think"
-# → { "tier": "sonnet", "id": "anthropic/claude-sonnet-4-6", ... }
+node router.js --json "heartbeat status check"
+# → { "tier": "qwen3", "id": "ollama/qwen3:8b", "reason": "..." }
 ```
 
----
-
-## In Cron Jobs
-
-Tag the model explicitly in the cron `payload`:
-
+### In cron job agentTurn payloads
 ```json
-{ "kind": "agentTurn", "message": "...", "model": "ollama/qwen3:8b" }    // routine
-{ "kind": "agentTurn", "message": "...", "model": "anthropic/claude-sonnet-4-6" }  // normal
-{ "kind": "agentTurn", "message": "...", "model": "anthropic/claude-opus-4-6" }    // high-stakes
+{ "kind": "agentTurn", "message": "...", "model": "ollama/qwen3:8b" }
+{ "kind": "agentTurn", "message": "...", "model": "anthropic/claude-sonnet-4-6" }
+{ "kind": "agentTurn", "message": "...", "model": "anthropic/claude-opus-4-6" }
+```
+
+### Mental check before any task
+```
+1. Mechanical with no stakes? → Qwen3
+2. High-stakes or irreversible? → Opus
+3. Everything else → Sonnet
 ```
 
 ---
 
 ## Qwen3 Quirks
 
-- **Speed:** ~1 tok/sec on Bathysphere CPU. Fine for async/background.
-- **Thinking mode:** Defaults to chain-of-thought. Prefix with `/no_think` for simple tasks.
-- **Endpoint:** `http://localhost:11434` — runs as user systemd service (`systemctl --user status ollama`)
-- **Context:** 32K tokens
+- **Speed:** ~1 tok/sec on Bathysphere CPU (no GPU). Fine for background/async.
+- **Thinking mode:** Qwen3 defaults to chain-of-thought. Prefix with `/no_think` for simple tasks.
+- **Endpoint:** `http://localhost:11434` (must have Ollama running — user systemd service, auto-starts)
+- **Capability:** Good at structured/formulaic tasks. Weak on nuance, voice, complex reasoning.
 
 ---
 
-## OpenClaw Config (current)
+## OpenClaw Config State
 
 ```
-primary:  anthropic/claude-sonnet-4-6
-fallback: ollama/qwen3:8b  (API failure only)
-opus:     explicit opt-in via /model or cron model field
+primary:   anthropic/claude-sonnet-4-6
+fallbacks: [ollama/qwen3:8b]   ← API failure only
 ```
+
+Opus is available via alias `opus` or full id `anthropic/claude-opus-4-6`.  
+Use it intentionally — never as a fallback.
