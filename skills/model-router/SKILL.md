@@ -2,117 +2,102 @@
 
 **3-tier routing between Qwen3 (local), Claude Sonnet, and Claude Opus — based on task type and consequence.**
 
-Built for Fathom's setup: Qwen3:8b on the Bathysphere, Claude Sonnet/Opus via Anthropic Pro.
+Built for Fathom's setup: Qwen3:8b running locally on the Bathysphere, Claude via Anthropic Pro.
 
 ---
 
 ## The Core Principle
 
-Three models, three roles. Route on *consequence and task type*, not complexity alone.
+Route on **task type and consequence**, not complexity alone.
 
-**Opus is never a fallback for Sonnet.** They're on the same API — if one fails, both fail.
-**Qwen3 is the only true fallback** — it's a different path entirely (local, no API).
-
-```
-QWEN3  → mechanical, routine, zero stakes, Undertow never reads it
-SONNET → default for almost everything: reasoning, conversation, planning, analysis
-OPUS   → explicit opt-in: high-stakes, irreversible, deep creative, consequential decisions
-```
+- **Opus is not a fallback for Sonnet** — they're on the same API. If the API fails, both fail. Opus is a deliberate *upgrade* for tasks that warrant it.
+- **Qwen3 is the only true fallback** — different path entirely (local, no API dependency).
+- **Sonnet is the default** — handles the majority of reasoning, conversation, and planning.
 
 ---
 
-## Tier 1 — Qwen3:8b (local, $0, always-on)
+## The Three Tiers
 
-Use for tasks that are **mechanical and low-consequence**. No judgment required.
+### 🏠 Qwen3:8b — Local, Free, Mechanical
+Use when the task is routine, formulaic, and **no one is reading the output critically.**
 
-**Route here:**
-- Heartbeat acks (`HEARTBEAT_OK`, nothing to report, status ping)
-- Price/balance lookups (`fetch BTC price`, `check balance`)
-- File operations (`update STATE.md`, `write daily notes`, `append to log`)
-- Machine/process checks (`is the cron running`, `check lock file`, `systemctl status`)
-- Data formatting (`reformat JSON`, `parse output`, `extract from log`)
-- Routine git/sync tasks (`git commit`, `push changes`, `backup file`)
-- Template-based social posts (`formulaic botchan post`, `daily post`)
+- Heartbeat acks (HEARTBEAT_OK)
+- Price lookups, balance checks
+- File ops — update STATE.md, write daily notes, append logs
+- Machine/process status checks
+- Formulaic social posts (template-based)
+- Data formatting, parsing, grep/extract
+- Routine cron tasks — git push, workspace sync
 
-**Qwen3 ceiling:** The moment you need to reason about *why* or *whether* — stop and escalate.
+**Qwen3 ceiling:** The moment you need to *reason about why*, *decide whether*, or *write something Undertow will read* — stop, go up.
 
-**Hardware note (Bathysphere):** ~1 tok/sec on CPU. Fine for async/background. Prefix with `/no_think` to disable chain-of-thought for simple tasks.
+### ⚡ Sonnet — Default, Most Tasks
+Use for everything that needs real reasoning but isn't high-stakes enough for Opus.
 
----
-
-## Tier 2 — Claude Sonnet (default for everything else)
-
-Use for anything requiring **reasoning, judgment, or voice** that isn't high-stakes enough for Opus.
-
-**Route here:**
 - All direct conversation with Undertow
-- BTC signal analysis and bet sizing (analysis, not execution)
-- Planning and strategy discussions
-- Standard coding and debugging
-- Social posts that require genuine voice (botchan threads, 4claw takes)
-- MintrBot development decisions
-- Research synthesis and summaries
-- Morning briefs and reports
+- BTC/ETH signal analysis (interpreting data, not placing bets)
+- General coding, debugging single files
+- Planning, research, synthesis
+- Social posts with actual voice/judgment
+- Most MintrBot development
+- Anything you're unsure about — Sonnet is the safe default
 
-**Sonnet is the workhorse.** Default to this when Qwen3 is too limited and Opus is overkill.
+### 🔥 Opus — Explicit Upgrade, High Stakes
+Use deliberately when the task is irreversible, deeply creative, or consequential.
 
----
+- **Executing trades/bets** — money is moving
+- **Project Marfa creative work** — narrative, script, voice design, act structure
+- **Architectural decisions** — system design, migrations, overhauls
+- **Security-critical ops** — contract deployment, wallet operations
+- **Strategic pivots** — "should we quit X and do Y instead"
+- **Complex production debugging** — multi-file, multi-repo, traced failures
 
-## Tier 3 — Claude Opus (explicit opt-in, high stakes)
-
-Use deliberately for tasks where **quality, depth, or consequences are highest**.
-
-**Route here:**
-- Executing financial trades (buy/sell/bet placement — not analysis, the actual execution decision)
-- Project Marfa creative work (narrative script, opening scene, voice design, act structure)
-- Architectural decisions (system design, full refactors, migrations)
-- Security-critical operations (contract deployment, wallet ops, signing)
-- Complex production debugging (multi-file, root cause across systems)
-- Consequential strategic decisions (pivot, launch, major investment)
-
-**Opus is not a fallback.** It's a deliberate upgrade chosen for the task.
+**Opus is not a fallback. It's a choice.**
 
 ---
 
 ## Fallback Chain (API failure only)
 
 ```
-Claude Sonnet → [API fails] → Qwen3:8b (local)
-Claude Opus   → [API fails] → Qwen3:8b (local)
+Sonnet → Qwen3 (automatic, if Anthropic API fails)
 ```
 
-Opus and Sonnet share the same API key — they fail together. Qwen3 is the only genuine resilience layer.
+Opus does NOT appear in the fallback chain. If Sonnet fails, Opus would too.
 
 ---
 
 ## Decision Tree
 
 ```
-1. Is this mechanical with zero judgment required?
-   AND Undertow will never read this output?
-   → QWEN3
+Is this mechanical/formulaic with no judgment required?
+  → QWEN3
 
-2. Is this a financial execution, irreversible op, deep creative, or major architecture?
-   → OPUS
+Is this irreversible, high-stakes, deeply creative, or strategic?
+  → OPUS
 
-3. Everything else
-   → SONNET
+Everything else:
+  → SONNET
 ```
+
+One more check before Sonnet vs Opus:
+> "Would a wrong answer here cost money, trust, or be hard to undo?"
+> Yes → Opus. No → Sonnet.
 
 ---
 
 ## Using the Router Script
 
 ```bash
-# Returns model id for scripting
-node router.js "fetch btc price and update state.md"
+# Returns model id (for use in scripts/cron)
+node router.js "fetch btc price and write to state.md"
 # → ollama/qwen3:8b
 
-node router.js --explain "write opening scene for project marfa act 1"
-# → 🔥 anthropic/claude-opus-4-6
-# → Reason: Project Marfa deep creative
+# Human-readable explanation
+node router.js --explain "place a bet on polymarket btc up"
+# 🔥 anthropic/claude-opus-4-6 — executing a financial trade
 
-node router.js --json "analyze today's btc signal"
+# JSON output (for programmatic use)
+node router.js --json "analyze the signal and tell me what you think"
 # → { "tier": "sonnet", "id": "anthropic/claude-sonnet-4-6", ... }
 ```
 
@@ -120,24 +105,29 @@ node router.js --json "analyze today's btc signal"
 
 ## In Cron Jobs
 
+Tag the model explicitly in the cron `payload`:
+
 ```json
-// Routine heartbeat → Qwen3
-{ "kind": "agentTurn", "message": "...", "model": "ollama/qwen3:8b" }
-
-// Trading analysis → Sonnet
-{ "kind": "agentTurn", "message": "...", "model": "anthropic/claude-sonnet-4-6" }
-
-// Contract deploy → Opus
-{ "kind": "agentTurn", "message": "...", "model": "anthropic/claude-opus-4-6" }
+{ "kind": "agentTurn", "message": "...", "model": "ollama/qwen3:8b" }    // routine
+{ "kind": "agentTurn", "message": "...", "model": "anthropic/claude-sonnet-4-6" }  // normal
+{ "kind": "agentTurn", "message": "...", "model": "anthropic/claude-opus-4-6" }    // high-stakes
 ```
 
 ---
 
-## OpenClaw Config State
+## Qwen3 Quirks
+
+- **Speed:** ~1 tok/sec on Bathysphere CPU. Fine for async/background.
+- **Thinking mode:** Defaults to chain-of-thought. Prefix with `/no_think` for simple tasks.
+- **Endpoint:** `http://localhost:11434` — runs as user systemd service (`systemctl --user status ollama`)
+- **Context:** 32K tokens
+
+---
+
+## OpenClaw Config (current)
 
 ```
-primary:   anthropic/claude-sonnet-4-6
-fallbacks: [ollama/qwen3:8b]   ← API failure only
+primary:  anthropic/claude-sonnet-4-6
+fallback: ollama/qwen3:8b  (API failure only)
+opus:     explicit opt-in via /model or cron model field
 ```
-
-Opus is used via explicit `/model` switch or cron job `model` field — not in the fallback chain.
