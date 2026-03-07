@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * model-router.js — 3-tier task-based model routing for Fathom
+ * model-router.js — 3-tier task-based model routing for AI agents
  *
  * Tiers:
  *   QWEN3   — local, free, always-on. Routine/mechanical tasks.
@@ -39,7 +39,7 @@ const OPUS_SIGNALS = [
   // Architecture / irreversible decisions
   { pattern: /\b(architect|system design|refactor.*entire|migrate|overhaul|redesign)\b/, reason: 'architectural decision' },
   // Deep creative requiring voice/identity
-  { pattern: /\b(marfa|opening scene|narrative script|act \d|five.act|installation script|voice design)\b/, reason: 'Project Marfa deep creative' },
+  { pattern: /\b(opening scene|narrative script|act \d|five.act|installation script|voice design|creative script|story script)\b/, reason: 'deep creative requiring voice/identity' },
   // Security critical
   { pattern: /\b(deploy contract|sign.*transaction|private key|wallet recovery|emergency|drainer|exploit)\b/, reason: 'security-critical operation' },
   // Complex multi-file debugging
@@ -49,7 +49,7 @@ const OPUS_SIGNALS = [
 ];
 
 /**
- * QWEN3 — Local, free, mechanical. No judgment, no stakes, no Undertow reading it.
+ * QWEN3 — Local, free, mechanical. No judgment, no stakes, not user-facing.
  */
 const QWEN_SIGNALS = [
   // Heartbeat ack

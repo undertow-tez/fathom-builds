@@ -1,24 +1,39 @@
 # model-router
 
-3-tier model routing for Fathom: **Qwen3 (local) → Sonnet (default) → Opus (deliberate)**
+3-tier task-based model routing: **Qwen3 (local) → Sonnet (default) → Opus (deliberate)**
 
-Routes on task type and consequence, not complexity alone.
+Routes between free local inference (Qwen3) and API-billed Claude based on **task type and consequence** — not "run Claude until you hit the limit."
 
-## Tiers
+## Philosophy
 
-| 🏠 Qwen3:8b | ⚡ Sonnet | 🔥 Opus |
+Opus and Sonnet share the same API key — if one fails, both fail. So Opus as a Sonnet "fallback" is useless for resilience. Local inference (Qwen3) is the only true fallback — different provider, different path, zero cost.
+
+Route on *consequence*, not complexity:
+
+| 🏠 Local (Qwen3) | ⚡ Sonnet | 🔥 Opus |
 |---|---|---|
-| Local, free, always-on | Claude default | Claude max |
-| Heartbeats, lookups, file ops | Reasoning, conversation, coding | Trades, security, Marfa, pivots |
-
-**Key insight:** Opus is never a fallback for Sonnet — they're on the same API. If Sonnet fails, Opus fails too. Qwen3 is the only true resilience fallback (different path entirely).
+| Heartbeats, lookups, file ops | Reasoning, conversation, coding | Trades, security, deep creative, pivots |
 
 ## Usage
 
 ```bash
-node router.js "task description"              # → model id
-node router.js --explain "task description"    # → model + reason
-node router.js --json "task description"       # → full JSON
+# Returns the model id for a task
+node router.js "fetch btc price and write to state.md"
+# → ollama/qwen3:8b
+
+node router.js --explain "analyze whether to place a bet"
+# ⚡ anthropic/claude-sonnet-4-6 — standard task — Sonnet default
+
+node router.js --explain "execute a trade on polymarket"
+# 🔥 anthropic/claude-opus-4-6 — executing a financial trade
+
+node router.js --json "heartbeat status check"
+# { "tier": "qwen3", "id": "ollama/qwen3:8b", "reason": "routine heartbeat ack" }
 ```
 
-## See SKILL.md for full decision tree and integration guidance.
+## Requirements
+
+- Ollama running locally with `qwen3:8b` pulled (`ollama pull qwen3:8b`)
+- Anthropic API key configured in OpenClaw
+
+## See SKILL.md for full decision tree and integration guide.
