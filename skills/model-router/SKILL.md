@@ -1,147 +1,147 @@
 # Model Router Skill
 
-**Smart routing between local Qwen3 and Claude based on task type and consequence — not "run Claude until credits run out."**
+**3-tier routing between Qwen3 (local), Claude Sonnet, and Claude Opus based on task type and consequence.**
 
-Built for Fathom's setup: Qwen3:8b running locally on the Bathysphere, Claude Sonnet via Anthropic Pro.
-
----
-
-## The Core Principle
-
-Qwen3 is free and always available. Claude is limited by a Pro plan.
-The question is never "can Claude handle this better?" (it usually can).
-The question is: **"does this task require Claude?"**
-
-Route on *consequence and task type*, not complexity alone.
+Built for Fathom's setup: Qwen3:8b on Bathysphere, Claude Sonnet/Opus via Anthropic Pro.
 
 ---
 
-## Decision Tree — Ask These in Order
+## Core Design Principle
 
-### 1. Is Undertow directly reading/judging this response?
-→ **Claude.** If a human reads it and forms an opinion about you, use Claude.
+**Route on task type and consequence — not complexity alone.**
 
-### 2. Does this involve financial decisions or real-money actions?
-→ **Claude.** Trading analysis, bet placement logic, portfolio decisions — always Claude.
-Even if the task looks simple, the stakes aren't.
+Opus is NOT a fallback for Sonnet. They're on the same API key — if one fails, both fail.
+The only true fallback is Qwen3 (local, different path entirely).
 
-### 3. Does this require creative judgment or nuanced writing?
-→ **Claude.** Project Marfa, social posts you care about, anything with voice/tone.
-
-### 4. Is this a security-sensitive operation?
-→ **Claude.** Wallet signing, key management, anything where a mistake is irreversible.
-
-### 5. Does the task require chaining multiple tool calls with reasoning between them?
-→ **Claude.** Multi-step plans where each step depends on interpreting the previous one.
-
-### 6. Everything else → **Qwen3.**
+Opus is a **deliberate upgrade** for tasks that warrant it.
+Sonnet is the **default** for most real work.
+Qwen3 handles anything **mechanical with no stakes**.
 
 ---
 
-## Qwen3 Task List (local, $0, always-on)
+## The 3 Tiers
 
-Use `ollama/qwen3:8b` for:
+### 🏠 Qwen3:8b — Local, free, always-on
+**Use for:** Tasks that are mechanical, low-stakes, and Undertow never reads directly.
+- Heartbeat acks (HEARTBEAT_OK, nothing to report)
+- Price/balance lookups
+- File reads/writes without reasoning (STATE.md updates, daily logs)
+- Machine/process status checks
+- Routine git commits and pushes
+- Data formatting and log parsing
+- Template-based social posts
 
-- **Heartbeats that result in HEARTBEAT_OK** — nothing to report, simple ack
-- **Routine status checks** — is the machine running, what's in STATE.md, crontab healthy?
-- **Simple price lookups** — fetch BTC price, format it, write to a file
-- **Formulaic social posts** — botchan daily post from a template, 4claw replies to simple threads
-- **File ops without reasoning** — update STATE.md, write daily memory notes, append to logs
-- **Data formatting/transformation** — take JSON, reformat it, output structured text
-- **Cron-triggered jobs with clear decision trees** — if X then Y, no judgment required
-- **Simple keyword searches** — scan a log file, grep for errors, count occurrences
+**Qwen3 ceiling:** The moment you need to *reason about why* or *judge whether*, stop and use Sonnet.
 
-**Qwen3 ceiling:** If you find yourself needing to reason about *why* or *whether* (not just *what*), stop and switch to Claude.
-
----
-
-## Claude Task List (API, Pro plan, preserve for what matters)
-
-Use `anthropic/claude-sonnet-4-6` for:
-
-- **All direct conversation with Undertow** — no exceptions
-- **Trading analysis** — BTC signal interpretation, bet sizing, market reads
-- **Polymarket decisions** — edge calculation, position logic
-- **Project Marfa creative work** — narrative writing, voice design, script
-- **Complex debugging** — multi-file issues, logic errors, architectural problems
-- **Planning and strategy** — what to build next, how to structure a system
-- **MintrBot development** — contract interactions, API design, UX decisions
-- **Security operations** — wallet ops, key rotation, anything signing-related
-- **Anything where a wrong answer costs money, trust, or time**
-- **Morning briefs and weekly summaries** — Undertow reads these
+**Quirks:** ~1 tok/sec on CPU. Fine for async tasks. `/no_think` prefix disables chain-of-thought for faster simple responses.
 
 ---
 
-## How to Use This Skill
+### ⚡ Sonnet — Claude default, most tasks
+**Use for:** Everything requiring reasoning, judgment, conversation, or writing — but without the highest stakes.
+- All direct conversation with Undertow
+- BTC/ETH signal analysis (understanding, not execution)
+- Standard debugging and code review
+- Social posts with genuine voice (botchan reflections, 4claw takes)
+- Research and synthesis
+- Planning and roadmapping
+- MintrBot development work
+- Most heartbeat tasks that DO something (not just ack)
 
-### In heartbeat scripts and cron jobs
+**Sonnet is the right choice when:** you need to think, but the task doesn't involve executing irreversible actions or deep creative work.
 
-Set the model explicitly in cron job definitions:
+---
+
+### 🔥 Opus — Explicit opt-in, high-stakes and high-depth
+**Use for:** Tasks where the consequence of a wrong answer is real, or where depth matters more than speed.
+- **Executing trades** — actual bet placement, buys, sells (not just analysis)
+- **Project Marfa** — narrative script, voice design, act structure, opening scene
+- **Contract deployment** — anything onchain and irreversible
+- **Architectural decisions** — system redesigns, major pivots, cross-repo refactors
+- **Security-critical ops** — wallet recovery, key management, exploit response
+- **Consequential strategic choices** — "should we pivot MintrBot", "should we quit this bet"
+- **Complex production debugging** — multi-file, multi-system, root cause analysis
+
+**Opus is NOT:** a fallback. A better Sonnet. Something to use "just in case."
+**Opus IS:** the deliberate choice when stakes or depth justify it.
+
+---
+
+## Decision Tree
+
+```
+Is the task mechanical with no stakes and Undertow won't read it?
+  YES → Qwen3
+
+Is the task executing a financial trade or irreversible onchain action?
+  YES → Opus
+
+Is the task deep creative work (Marfa) or a consequential strategic decision?
+  YES → Opus
+
+Is the task security-critical or complex multi-system debugging?
+  YES → Opus
+
+Everything else → Sonnet
+```
+
+---
+
+## Fallback Chain (API failure only)
+
+```
+Sonnet → Qwen3 (local)
+```
+
+Opus is never in the fallback chain. If Opus is unavailable, that means Anthropic is down — fall back to Qwen3 and alert Undertow.
+
+---
+
+## Using the Router CLI
+
+```bash
+# Returns model id (for use in scripts)
+node router.js "fetch btc price and update state.md"
+# → ollama/qwen3:8b
+
+# Human-readable with reason
+node router.js --explain "execute trade buy 15 usdc btc up"
+# → Task: "execute trade buy 15 usdc btc up"
+# → Model: 🔥 anthropic/claude-opus-4-6
+# → Reason: executing a financial trade
+
+# JSON output
+node router.js --json "write the opening scene for marfa act 1"
+```
+
+## Using in Cron Jobs
 
 ```json
 // Routine heartbeat → Qwen3
-{
-  "model": "ollama/qwen3:8b",
-  "payload": { "kind": "agentTurn", "message": "...", "model": "ollama/qwen3:8b" }
-}
+{ "payload": { "kind": "agentTurn", "message": "...", "model": "ollama/qwen3:8b" } }
 
-// Complex heartbeat (trading decision) → Claude
-{
-  "payload": { "kind": "agentTurn", "message": "...", "model": "anthropic/claude-sonnet-4-6" }
-}
-```
+// Analysis heartbeat → Sonnet (default, omit model field)
+{ "payload": { "kind": "agentTurn", "message": "..." } }
 
-### In your own reasoning
-
-Before starting any task, classify it:
-
-```
-TASK: [describe task]
-UNDERTOW READS THIS? [yes/no]
-FINANCIAL STAKES? [yes/no]
-CREATIVE/NUANCED? [yes/no]
-MULTI-STEP REASONING? [yes/no]
-
-→ If any YES: Claude
-→ All NO: Qwen3
-```
-
-### Via the router script
-
-```bash
-# Classify and route a task string
-node ~/.openclaw/workspace/skills/model-router/router.js "check if btc machine is running"
-# → qwen3
-
-node ~/.openclaw/workspace/skills/model-router/router.js "analyze today's BTC signal and decide if we should bet"  
-# → claude
+// Trade execution → Opus
+{ "payload": { "kind": "agentTurn", "message": "...", "model": "anthropic/claude-opus-4-6" } }
 ```
 
 ---
 
-## Qwen3 Quirks to Know
+## Quick Reference
 
-- **Speed:** ~1 tok/sec on Bathysphere CPU. Fine for async/background, slow for interactive.
-- **Thinking mode:** Qwen3 defaults to chain-of-thought (slow). Prefix prompt with `/no_think` for simple tasks.
-- **Context:** 32K tokens, adequate for most tasks.
-- **Capability:** Solid for structured/formulaic tasks. Weaker on nuance, voice, complex reasoning.
-- **Endpoint:** `http://localhost:11434` — must have Ollama running (`systemctl --user status ollama`)
-
----
-
-## OpenClaw Config Reference
-
-Current fallback chain: `Claude Sonnet → Claude Opus → Qwen3:8b`
-
-The fallback chain is for *failure*, not routing. This skill is for *intentional* routing before failure happens.
-
-To manually specify model in a cron job agentTurn payload, use the `model` field.
-The `/model` command can switch mid-session if needed.
-
----
-
-## When in Doubt
-
-**Ask: "Would I be embarrassed if Undertow saw Qwen3 handle this?"**
-- Yes → Claude.
-- No → Qwen3.
+| Task example | Model |
+|---|---|
+| Heartbeat nothing to report | 🏠 Qwen3 |
+| Fetch BTC price, update STATE.md | 🏠 Qwen3 |
+| Check if cron machine is running | 🏠 Qwen3 |
+| Git commit and push workspace | 🏠 Qwen3 |
+| Analyze BTC signal (no trade yet) | ⚡ Sonnet |
+| Reply to Undertow about anything | ⚡ Sonnet |
+| Write a reflective botchan post | ⚡ Sonnet |
+| Debug the signing API error | ⚡ Sonnet |
+| Execute BTC UP bet $15 | 🔥 Opus |
+| Write Marfa Act 1 opening scene | 🔥 Opus |
+| Deploy contract to Base mainnet | 🔥 Opus |
+| Decide whether to pivot MintrBot | 🔥 Opus |
