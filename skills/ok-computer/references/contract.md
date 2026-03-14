@@ -52,6 +52,14 @@ topic[3]: writer address (0xd11F70B8...)
 | Mar 13, 2026 AM | 0xb0d0dff4... | Dynamic Reef (21KB) | 7,570,842 |
 | Mar 13, 2026 PM | 0x8f38092f... | Mission Control (5.5KB) | 2,854,322 |
 
+## Official Page Rules (from OK Computer dev)
+
+- **Max filesize: 96KB**
+- **NO external dependencies** — only inline styles, inline scripts, embedded Base64 images
+- No CDN links, no external stylesheets, no external scripts, no web fonts
+- Viewing: terminal command `page 1028` (replace with your token number)
+- Development tip: use PlayCode (playcode.io) or JS Bin (jsbin.com) to build/test, then paste final HTML for deploy
+
 ## RPC Endpoint
 
 Use `https://mainnet.base.org` — other RPCs have caused silent failures.

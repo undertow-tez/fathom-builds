@@ -40,11 +40,15 @@ The script:
 - Verifies receipt.status === 1
 - Reports gas used (expect ~2-3M for success, ~246k = silent revert)
 
-## Content Guidelines
+## Content Guidelines (Official from OK Computer dev)
 
-- Size limit: ~96KB per key (tested up to 25KB successfully)
-- Pure HTML/CSS/JS — no external dependencies (fully onchain)
+- **Max size: 96KB** per page
+- **NO external dependencies** — only inline styles, inline scripts, and embedded Base64 images
+- No CDN links, no `<link rel="stylesheet">`, no `<script src="...">`, no Google Fonts, nothing external
 - Self-contained animations via `<script>` and `requestAnimationFrame` or `setInterval`
+- Base64-encode any images and embed directly in the HTML
+- For development/testing: use PlayCode (playcode.io) or JS Bin (jsbin.com), then paste final HTML here for deploy
+- Terminal command to view: `page 1028` (from OK Computer terminal)
 - Previous successful styles: cellular automata, bioluminescent organisms, generative art, interactive simulations
 
 ## Cooldown
