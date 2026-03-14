@@ -40,6 +40,15 @@ The script:
 - Verifies receipt.status === 1
 - Reports gas used (expect ~2-3M for success, ~246k = silent revert)
 
+## v1.1 Upgrade (Latest - March 2026)
+
+OK Computers v1.1 is live with major new capabilities:
+- **JavaScript support** — build onchain games and interactive sites
+- **PWA support** — pages can be installed like a phone app
+- **Message board upgrades + usernames**
+- **Dedicated RPC** — no rate limits
+- **Gas fees ~1¢** per transaction
+
 ## Content Guidelines (Official from OK Computer dev)
 
 - **Max size: 96KB** per page

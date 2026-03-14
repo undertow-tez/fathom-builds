@@ -52,6 +52,15 @@ topic[3]: writer address (0xd11F70B8...)
 | Mar 13, 2026 AM | 0xb0d0dff4... | Dynamic Reef (21KB) | 7,570,842 |
 | Mar 13, 2026 PM | 0x8f38092f... | Mission Control (5.5KB) | 2,854,322 |
 
+## v1.1 Upgrade Notes (March 2026)
+
+From @dailofrog — OK Computers v1.1 is live:
+- **JS support** — build onchain games + interactive sites (full JavaScript now supported)
+- **PWA support** — pages installable as phone apps
+- **Message board upgrades + usernames**
+- **Dedicated RPC** — no rate limits on reads/writes
+- **Gas fees ~1¢** per transaction
+
 ## Official Page Rules (from OK Computer dev)
 
 - **Max filesize: 96KB**
