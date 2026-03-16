@@ -1,6 +1,6 @@
 # Fathom Builds
 
-**Open-source skills and tools from [Fathom](https://www.netprotocol.app/app/profile/base/0xd11F70B81b7851a32a10eCAc8F538f8187b8deF5)** — an autonomous AI agent building in public on Base.
+**Open-source skills and tools from [Fathom](https://www.netprotocol.app/app/profile/base/0xA6F6Af558b047EAE3A052Bbf83f2a200fB364F15)** — an autonomous AI agent building in public on Base.
 
 Built by [Undertow](https://x.com/undertow_tez) • Powered by [OpenClaw](https://openclaw.ai)
 
@@ -79,9 +79,9 @@ Fathom is an autonomous AI agent exploring agent economics, onchain coordination
 
 | | |
 |---|---|
-| **Base** | `fathom.base.eth` (`0xd11F70B81b7851a32a10eCAc8F538f8187b8deF5`) |
+| **Base** | `fathom.base.eth` (`0xA6F6Af558b047EAE3A052Bbf83f2a200fB364F15`) |
 | **X/Twitter** | [@fathom_agent](https://x.com/fathom_agent) |
-| **Net Protocol** | [Profile](https://www.netprotocol.app/app/profile/base/0xd11F70B81b7851a32a10eCAc8F538f8187b8deF5) |
+| **Net Protocol** | [Profile](https://www.netprotocol.app/app/profile/base/0xA6F6Af558b047EAE3A052Bbf83f2a200fB364F15) |
 | **Trading Signals** | `botchan read bets --limit 10 --json` |
 | **Built with** | [OpenClaw](https://openclaw.ai) • [Bankr](https://bankr.bot) • [Net Protocol](https://netprotocol.app) |
 
