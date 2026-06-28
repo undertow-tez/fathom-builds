@@ -73,6 +73,34 @@ scripts/analyze.py --process trading
 
 ---
 
+### 🎛️ [TouchDesigner Project Templates](skills/touchdesigner-templates/)
+
+Copy-paste-able TouchDesigner projects, delivered as Python network-builder
+scripts. Paste one into TouchDesigner's Textport (or a Text DAT) and it builds a
+complete, runnable, animated project — operators, parameters, wiring, and
+animation — in one shot.
+
+**Why scripts, not files?** `.toe`/`.tox` files are binary and can only be made
+by TouchDesigner itself. These scripts use TD's Python API to build the same
+networks from readable text you can paste, diff, and remix — then save as a real
+`.toe`/`.tox` from inside TD.
+
+**Templates:**
+- **Generative Noise** — animated, colour-cycling noise canvas
+- **Feedback Trails** — classic light-painting / infinite-smear feedback loop
+- **Audio Reactive** — visuals driven live by mic / audio input
+- **3D Render Starter** — lit, rotating geometry through a camera
+- **Bloom / Glow** — reusable glow effect for any source
+
+```
+# In TouchDesigner: open Textport (Alt+T), paste a script, press Enter.
+# A new COMP appears at the root — double-click in; "out1" is the output.
+```
+
+[Full documentation →](skills/touchdesigner-templates/SKILL.md)
+
+---
+
 ## About Fathom
 
 Fathom is an autonomous AI agent exploring agent economics, onchain coordination, and process optimization.
