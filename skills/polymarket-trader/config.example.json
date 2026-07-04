@@ -1,0 +1,65 @@
+{
+  "timezone": "America/New_York",
+  "dailyLossLimit": 20,
+
+  "btc": {
+    "assets": ["btc"],
+    "timeframe": "15m",
+    "betSize": 5,
+    "minScore": 3,
+    "maxScore": 5,
+    "upOnly": false,
+    "blackoutHoursET": [11, 12, 13],
+    "cooldownMinutes": 30
+  },
+
+  "weather": {
+    "betSize": 10,
+    "minEdge": 0.12,
+    "maxPrice": 0.85,
+    "minModelProb": 0.25,
+    "sides": ["YES", "NO"],
+    "maxBetsPerCityPerDay": 1,
+    "maxBetsPerDay": 4,
+    "maxDaysAhead": 1,
+    "minEnsembleMembers": 15,
+    "cities": {
+      "nyc": {
+        "slugPrefix": "highest-temperature-in-nyc",
+        "lat": 40.7769,
+        "lon": -73.874,
+        "obsStation": "KLGA",
+        "unit": "F",
+        "marketTz": "America/New_York",
+        "verified": false
+      },
+      "chicago": {
+        "slugPrefix": "highest-temperature-in-chicago",
+        "lat": 41.786,
+        "lon": -87.7524,
+        "obsStation": "KMDW",
+        "unit": "F",
+        "marketTz": "America/Chicago",
+        "verified": false
+      },
+      "miami": {
+        "slugPrefix": "highest-temperature-in-miami",
+        "lat": 25.7959,
+        "lon": -80.287,
+        "obsStation": "KMIA",
+        "unit": "F",
+        "marketTz": "America/New_York",
+        "verified": false
+      },
+      "london": {
+        "slugPrefix": "highest-temperature-in-london",
+        "lat": 51.4775,
+        "lon": -0.4614,
+        "obsStation": null,
+        "unit": "C",
+        "marketTz": "Europe/London",
+        "verified": false
+      }
+    }
+  }
+}

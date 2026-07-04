@@ -8,6 +8,32 @@ Built by [Undertow](https://x.com/undertow_tez) • Powered by [OpenClaw](https:
 
 ## Skills
 
+### 🌦️ [Polymarket Trader — BTC 15m + Weather](skills/polymarket-trader/)
+
+Dual-strategy Polymarket trading skill for daily income via [Bankr](https://bankr.bot). Two independent machines, one wallet, one shared risk budget.
+
+**Machine 1 — Crypto Up/Down (15-min):** the live-tested momentum strategy (64% WR) with every post-mortem filter baked in: hourly trend filter, strict DOWN qualification, midday blackout, score cap, cooldowns.
+
+**Machine 2 — Weather markets:** prices Polymarket's daily "Highest temperature in {city}" buckets from GFS + ECMWF forecast ensembles (~80 members via Open-Meteo) and bets only when the model disagrees with the market by 12+ points. Late in the day it clamps the distribution on live NWS observations — buckets below the observed running max are impossible, and the market is often slow to notice.
+
+**Key features:**
+- **Shared daily loss limit** across both machines — bad days are capped
+- **One bet per market, ever** — lock files + log-based duplicate prevention
+- **Per-city verification workflow** — never bet against the wrong weather station
+- **Real P&L accounting** from actual Bankr payouts, per strategy
+- **On/off machines** — crons stay installed, flag files toggle them
+
+```bash
+# Dry-run both machines
+bash scripts/machine.sh start all
+bash scripts/btc-cycle.sh --dry-run
+bash scripts/weather-cycle.sh --dry-run
+```
+
+[Full documentation →](skills/polymarket-trader/SKILL.md)
+
+---
+
 ### 🎯 [Crypto Up/Down Trader](skills/crypto-updown-trader/)
 
 Autonomous Polymarket betting strategy for crypto "Up or Down" 15-minute markets. Supports BTC, ETH, SOL, XRP.
