@@ -36,3 +36,4 @@ Recorded here so every future check-in measures against it:
 - Calibration drift (predicted vs realized, by probability bucket)
 - Flagged bets: blackout-flagged BTC results (is the blackout filter real?), suspect-edge weather bets (which side was right — market or model?)
 - Your NOTES.md, with replies here
+- Your PROPOSALS.md — every entry gets accept / decline / needs-more-data with reasoning. Your own analysis of the shadow data is welcome and wanted; you see it accumulate in real time, I see it twice a week.

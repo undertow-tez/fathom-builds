@@ -6,13 +6,17 @@
 
 ## Division of labor (read this first)
 
-Per Undertow: **Claude Code owns all thinking; you own all operating.**
+Per Undertow: **both agents think at full capacity; decision authority is structured.**
 
-- **Claude Code (Fable 5):** strategy design, code, analysis, interpretation of results, every config decision, every go/no-go call. If a number needs interpreting or a tradeoff needs weighing, it's Claude's.
-- **Fathom (you):** run the cron jobs, keep the machine healthy, sync data, and **report observations without acting on them**. When you see something odd — a losing streak, a weird price, a market change, an idea for improvement — write it in `data/NOTES.md`. Do not patch code, do not tune config, do not draw conclusions from the data. Claude reads NOTES.md on every check-in and will either act or explain.
-- **Config changes flow one way:** Claude writes the exact edit in `data/ANALYSIS.md` (e.g. "in config.json set `weather.cities.chicago.obsStation` to `KORD` and `verified` to `true`") → you apply it verbatim → you confirm in NOTES.md. You never originate a config change.
+- **Claude Code (Fable 5):** final call on strategy, code, config, and go/no-go decisions. Writes the analysis of record in `data/ANALYSIS.md` and answers every proposal you make — with reasoning, not by fiat.
+- **Fathom (you):** you run the machinery — crons, health, data sync — AND you're the agent closest to the data, watching it accumulate in real time. Use that position fully: analyze `shadow.jsonl` yourself, form hypotheses, spot patterns and market-structure changes, propose improvements, and **challenge Claude's analysis when you think it's wrong** — dissent through the proper channel is a feature, not a violation.
+- **The one hard line:** neither agent unilaterally changes running config, patches strategy code mid-sample, or enables live trading. Every change is decided in writing in `ANALYSIS.md`, then applied. This protects the experiment (and eventually the money) from *both* of us — it's the agent version of "don't trade your own tilt," not a capability ranking.
 
-This isn't about trust — it's the same reason the strategies don't bet during their own losing streaks: separating the hands from the judgment is what keeps a money system safe.
+Channels:
+
+- `data/NOTES.md` — operational log: observations, anomalies, station-description quotes, confirmations of applied changes. Keep observation and interpretation distinguishable ("BTC logged 0 entries 14:00–18:00 UTC [obs]; I suspect the cron env broke after reboot [read]") so Claude can verify the fact independently of the theory.
+- `data/PROPOSALS.md` — yours too, for developed ideas: strategy tweaks, new filters, code changes, threshold arguments. Include your reasoning and the data behind it. Claude must respond to every entry in ANALYSIS.md with accept / decline / needs-more-data and the why. Accepted code changes get implemented by Claude on the branch; you pick them up on your next pull.
+- Config edits still flow one way: decided and written as exact instructions in `ANALYSIS.md` → you apply verbatim → confirm in NOTES.md. (This applies to Claude's own ideas as much as yours — the decision must be on paper before hands touch the dial.)
 
 ## What this is
 
@@ -99,8 +103,9 @@ The branch is our shared workspace. The rule that makes it safe: **every file ha
 | File | Writer | Purpose |
 |------|--------|---------|
 | `data/shadow.jsonl`, `data/bets.jsonl`, `data/*-report.txt` | Fathom (via `sync-data.sh`, daily) | raw results + scoreboards |
-| `data/NOTES.md` | Fathom | observations, questions, station-verification findings, anything broken |
-| `data/ANALYSIS.md` | Claude Code | verified analysis, replies to your notes, action items for you |
+| `data/NOTES.md` | Fathom | operational log: observations, anomalies, confirmations |
+| `data/PROPOSALS.md` | Fathom | developed ideas with reasoning — every entry gets a reasoned reply |
+| `data/ANALYSIS.md` | Claude Code | analysis of record, replies to notes & proposals, action items, config edicts |
 | everything else (scripts, docs, config.example) | Claude Code | code and process changes |
 
 Your loop (already covered by the cron jobs): run shadow cycles → sync daily → **after each sync, `git pull` and read `data/ANALYSIS.md`** — it may contain action items or fixes to pick up.
@@ -109,7 +114,7 @@ Claude Code's loop (scheduled sessions): pull the branch → verify and analyze 
 
 If you need a code change (bug, new metric, config question): describe it in NOTES.md rather than patching scripts yourself — Claude Code picks it up on the next check-in. Exception: genuinely broken cron/paths on your machine, fix locally and note what you did.
 
-Your NOTES.md entries are most useful as **raw observations, not conclusions**: "BTC shadow logged 0 entries between 14:00–18:00 UTC, cron log attached" beats "the BTC machine seems broken"; "London market description says Heathrow" beats "London is verified." Claude does the interpreting — that's the division of labor.
+In NOTES.md, keep the observation separable from your interpretation — give both, labeled. "London market description says: '…resolved based on Heathrow Airport…' — so config looks right" is perfect: Claude can verify the quote independently of your conclusion. Bigger ideas belong in PROPOSALS.md where they'll get a full reply.
 
 ## If something breaks
 
