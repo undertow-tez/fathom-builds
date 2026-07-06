@@ -1,0 +1,12 @@
+👻 SHADOW REPORT — hypothetical results at real entry prices, no money moved
+
+   (2 flagged bet(s) excluded — blackout or suspect-edge; rerun with --include-flagged to analyze them)
+
+── BTC ──
+   Recommendations: 1 (0 resolved, 1 pending)
+   📏 VERDICT: keep shadowing — 0/200 resolved bets
+
+── WEATHER ──
+   Recommendations: 2 (0 resolved, 2 pending)
+   📏 VERDICT: keep shadowing — 0/50 resolved bets
+
