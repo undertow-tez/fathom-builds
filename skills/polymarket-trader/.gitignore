@@ -1,5 +1,6 @@
 config.json
 scripts/bets.jsonl
+scripts/shadow.jsonl
 scripts/trader.log
 scripts/.lock_*
 scripts/.enabled-*

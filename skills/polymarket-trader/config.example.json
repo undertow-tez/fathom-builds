@@ -13,9 +13,16 @@
     "cooldownMinutes": 30
   },
 
+  "proving": {
+    "btcMinResolvedBets": 200,
+    "weatherMinResolvedBets": 50,
+    "minEvPerDollar": 0.05
+  },
+
   "weather": {
-    "betSize": 10,
+    "betSize": 5,
     "minEdge": 0.12,
+    "maxEdge": 0.35,
     "maxPrice": 0.85,
     "minModelProb": 0.25,
     "sides": ["YES", "NO"],

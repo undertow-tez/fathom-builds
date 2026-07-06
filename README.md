@@ -17,6 +17,7 @@ Dual-strategy Polymarket trading skill for daily income via [Bankr](https://bank
 **Machine 2 — Weather markets:** prices Polymarket's daily "Highest temperature in {city}" buckets from GFS + ECMWF forecast ensembles (~80 members via Open-Meteo) and bets only when the model disagrees with the market by 12+ points. Late in the day it clamps the distribution on live NWS observations — buckets below the observed running max are impossible, and the market is often slow to notice.
 
 **Key features:**
+- **Shadow mode proving protocol** — every strategy runs paper-first at real entry prices; `shadow-score.js` reports EV per dollar + model calibration and issues go-live verdicts (weather: 50 resolved bets, BTC: 200)
 - **Shared daily loss limit** across both machines — bad days are capped
 - **One bet per market, ever** — lock files + log-based duplicate prevention
 - **Per-city verification workflow** — never bet against the wrong weather station
@@ -24,10 +25,10 @@ Dual-strategy Polymarket trading skill for daily income via [Bankr](https://bank
 - **On/off machines** — crons stay installed, flag files toggle them
 
 ```bash
-# Dry-run both machines
-bash scripts/machine.sh start all
-bash scripts/btc-cycle.sh --dry-run
-bash scripts/weather-cycle.sh --dry-run
+# Start proving (no money moves)
+bash scripts/machine.sh start shadow
+bash scripts/shadow-cycle.sh
+node scripts/shadow-score.js
 ```
 
 [Full documentation →](skills/polymarket-trader/SKILL.md)

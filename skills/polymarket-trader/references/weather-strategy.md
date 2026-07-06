@@ -96,6 +96,7 @@ Best edge: NO on 86-87°F @ 55¢ ... but YES 88-89 has cleaner win-prob → scri
 ## Tuning
 
 - `minEdge` 0.12 default. Raise to 0.15–0.20 if early results are break-even (model probably miscalibrated for that city). Don't go below 0.10 — Bankr slippage plus the cool bias eats it.
+- `maxEdge` 0.35 default — the too-good-to-be-true guard. When a confident market disagrees with the ensemble by 40+ points, the overwhelmingly likely explanations are on our side: wrong resolution station, stale `outcomePrices` on a thin book, a bucket parse bug, or model bias — not free money. Suspect edges are never traded; shadow mode logs them with a `suspect-edge` flag so you can diagnose which side was right. If suspects consistently resolve in the model's favor for a verified city, raise `maxEdge` for that deployment.
 - `maxDaysAhead` 1 default. Day-after-tomorrow ensembles are too wide to beat the market; don't raise it.
 - Add cities one at a time, verified, and give each 20+ resolved bets before judging.
 - Log everything; `pnl.js` breaks out weather vs btc so a leak in one machine can't hide behind the other.

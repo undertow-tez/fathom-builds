@@ -1,6 +1,6 @@
 ---
 name: polymarket-trader
-description: Dual-strategy Polymarket trading skill for daily income via the Bankr wallet. Machine 1 trades crypto 15-min Up/Down markets (BTC/ETH/SOL/XRP) with a live-tested momentum strategy. Machine 2 trades daily highest-temperature weather markets by pricing buckets from forecast model ensembles (Open-Meteo) and betting only when the model disagrees with the market. Shared risk guards, P&L accounting, and Bankr redemption.
+description: Dual-strategy Polymarket trading skill for daily income via the Bankr wallet. Machine 1 trades crypto 15-min Up/Down markets (BTC/ETH/SOL/XRP) with a live-tested momentum strategy. Machine 2 trades daily highest-temperature weather markets by pricing buckets from forecast model ensembles (Open-Meteo) and betting only when the model disagrees with the market. Includes a shadow mode that proves (or kills) each strategy on real prices before money moves. Shared risk guards, P&L accounting, and Bankr redemption.
 ---
 
 # Polymarket Trader (BTC 15m + Weather)
@@ -45,11 +45,29 @@ cp config.example.json config.json     # then edit
 
 export BANKR_API_KEY="..."             # unless a bankr skill is installed
 
-# Dry-run both machines (no bets placed)
-bash scripts/machine.sh start all
-bash scripts/btc-cycle.sh --dry-run
-bash scripts/weather-cycle.sh --dry-run
+# Start the proving phase (no bets placed — see Proving protocol below)
+bash scripts/machine.sh start shadow
+bash scripts/shadow-cycle.sh           # run once manually to sanity-check
+node scripts/shadow-score.js
 ```
+
+## Proving protocol (START HERE — this is not optional ceremony)
+
+Prediction markets are zero-sum minus costs. A strategy earns the right to real money by proving positive EV on real prices — win rate alone is meaningless (UP shares cost 53–55¢ because the tie edge is already priced in; a 58% win rate can be break-even). The protocol:
+
+**Phase 0 — Shadow everything (2–4 weeks).** `machine.sh start shadow` + the shadow crons below. Every would-be bet is logged with its live entry price, auto-resolved, and scored. No money moves.
+
+```bash
+node scripts/shadow-score.js     # EV per $, calibration, verdicts
+```
+
+**Phase 1 — Weather live at minimum size** ($5 default), once weather shadow shows positive EV over ≥50 resolved bets. Run shadow in parallel forever — comparing live fills (bets.jsonl) vs shadow quotes (shadow.jsonl) measures exactly what Bankr execution costs you.
+
+**Phase 2 — BTC live only at n≥200.** The historical 64% WR came from ~50 bets (95% CI roughly 50–77%) and its filters were fit on that same sample. The BTC machine stays in shadow until 200 resolved shadow bets show EV ≥ +5¢/$. If they don't: kill it without sentiment. `shadow-score.js` enforces these thresholds (configurable under `"proving"`).
+
+**Phase 3 — Direct CLOB execution** (see [`references/clob-execution.md`](references/clob-execution.md)). The weather obs-clamp edge is time-sensitive; Bankr's 2–8 min latency and market orders burn a large share of it. If phase 1 shows a real but slippage-eroded edge, this is the highest-value build.
+
+Realistic ceiling even when everything proves out: **$5–15/day at defensible sizes** — weather books are thin, so a proven edge means adding cities, not size. Bad days are capped by the shared loss limit, not eliminated.
 
 ### ⚠️ Verify weather resolution stations BEFORE enabling a city
 
@@ -81,10 +99,20 @@ Crons stay installed permanently; `machine.sh start/stop` toggles flag files the
 "0 21 * * *"   bash /path/to/scripts/weather-cycle.sh    # late obs-lock pass
 ```
 
+**Shadow machine — same schedules, no money** (this is where every deployment starts):
+```
+"8,23,38,53 * * * *"  bash /path/to/scripts/shadow-cycle.sh --btc
+"30 7 * * *"          bash /path/to/scripts/shadow-cycle.sh --weather
+"30 13 * * *"         bash /path/to/scripts/shadow-cycle.sh --weather
+"30 16 * * *"         bash /path/to/scripts/shadow-cycle.sh --weather
+"0 21 * * *"          bash /path/to/scripts/shadow-cycle.sh --weather
+```
+
 **Control:**
 ```bash
-bash scripts/machine.sh start btc      # or weather, or all
-bash scripts/machine.sh stop weather
+bash scripts/machine.sh start shadow   # phase 0 — start here
+bash scripts/machine.sh start weather  # phase 1 — only after shadow verdict ✅
+bash scripts/machine.sh stop btc       # any of btc|weather|shadow|all
 bash scripts/machine.sh status
 ```
 
@@ -101,24 +129,25 @@ bash scripts/machine.sh status
 | Last-2-min cutoff | BTC | never bet with <2 min left (Bankr too slow) |
 | Per-city / per-day caps | Weather | 1 bet/city/day, 4 weather bets/day |
 | Price bounds | Weather | never buy above 85¢ or below 3¢ |
+| Suspect-edge guard | Weather | edge > 35 pts = probably OUR error (wrong station, stale quote) — never traded, shadow-logged for diagnosis |
 | Ensemble sanity | Weather | skip if <15 members returned |
 
-## Daily income framing
-
-Realistic expectations with defaults ($5 BTC bets, $10 weather bets):
-- BTC: ~10–15 qualifying windows/day at 64% WR ≈ **+$3–8/day** expected
-- Weather: 0–4 bets/day at a genuine 10–15 pt edge ≈ **+$2–6/day** expected, lumpier
-- Bad days happen; the shared loss limit caps them at −$20. Do not raise stakes until 50+ resolved bets confirm the win rate at your sizes. Track with:
+## Tracking
 
 ```bash
-node scripts/pnl.js            # all-time, per strategy
+node scripts/pnl.js              # real P&L, all-time, per strategy
 node scripts/pnl.js --today
+node scripts/shadow-score.js     # hypothetical EV/$, calibration, go-live verdicts
 ```
+
+Judge strategies on **EV per dollar staked at entry prices**, never on win rate. `shadow-score.js` also reports weather model calibration (when it said 80%, did it happen 80%?) and can test whether the BTC blackout filter is real (`--include-flagged`).
 
 ## Scripts
 
 | Script | Purpose |
 |--------|---------|
+| `shadow-cycle.sh` | Shadow machine: log would-be bets at real prices, no money |
+| `shadow-score.js` | Resolve + score shadow bets: EV/$, calibration, verdicts |
 | `btc-cycle.sh` | BTC machine full cycle (guards → analyze → bet) |
 | `btc-strategy.js` | Momentum analyzer + market slug lookup, `--dry-run` safe |
 | `weather-cycle.sh` | Weather machine full cycle |
@@ -142,6 +171,7 @@ node scripts/pnl.js --today
 ## References
 
 - [`references/weather-strategy.md`](references/weather-strategy.md) — bucket resolution mechanics, ensemble math, worked example, failure modes
+- [`references/clob-execution.md`](references/clob-execution.md) — phase 3 roadmap: direct CLOB limit orders to stop paying Bankr latency/slippage
 - [`../crypto-updown-trader/`](../crypto-updown-trader/) — original BTC strategy with full performance history and six-sigma integration
 
 ## Disclaimers

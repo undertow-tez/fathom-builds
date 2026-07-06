@@ -36,7 +36,8 @@ function argVal(name, dflt) {
 
 const CONFIG_PATH = argVal('--config', path.join(__dirname, '..', 'config.json'));
 const ONLY_CITY = argVal('--city', null);
-const BETS_FILE = path.join(__dirname, 'bets.jsonl');
+// Shadow mode passes --bets-file shadow.jsonl so per-day caps apply to shadowed bets too
+const BETS_FILE = argVal('--bets-file', path.join(__dirname, 'bets.jsonl'));
 
 let config = {};
 try { config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')); } catch {
@@ -46,6 +47,9 @@ try { config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')); } catch {
 const W = config.weather || {};
 const CITIES = W.cities || {};
 const MIN_EDGE = W.minEdge ?? 0.12;
+// Edges beyond this are almost always OUR mistake (wrong station, stale quote,
+// parse error, model bias) rather than free money — flag as suspect, don't trade.
+const MAX_EDGE = W.maxEdge ?? 0.35;
 const MAX_PRICE = W.maxPrice ?? 0.85;
 const MIN_MODEL_PROB = W.minModelProb ?? 0.25;
 const SIDES = W.sides || ['YES', 'NO'];
@@ -104,6 +108,8 @@ function parseBucket(label) {
   if (m) return { lo: +m[2] + 1, hi: Infinity };
   m = s.match(/(below|lower than|less than)\s*(-?\d+)/i);
   if (m) return { lo: -Infinity, hi: +m[2] - 1 };
+  m = s.match(/^(-?\d+)\s*[FC]?$/i); // single-degree bucket, e.g. "30°C" (Celsius cities)
+  if (m) return { lo: +m[1], hi: +m[1] };
   return null;
 }
 
@@ -185,7 +191,7 @@ function todaysWeatherBets() {
     for (const line of fs.readFileSync(BETS_FILE, 'utf8').split('\n')) {
       if (!line.trim()) continue;
       let d; try { d = JSON.parse(line); } catch { continue; }
-      if (d.strategy !== 'weather' || d.result !== 'submitted') continue;
+      if (d.strategy !== 'weather' || !['submitted', 'shadow'].includes(d.result)) continue;
       if (!String(d.time || '').startsWith(today)) continue;
       total++;
       const c = d.meta?.city || '?';
@@ -264,6 +270,7 @@ async function main() {
               side, outcomeIndex: side === 'YES' ? 0 : 1,
               price: +price.toFixed(3), modelProb: +winProb.toFixed(3), edge: +edge.toFixed(3),
               amount: BET_SIZE,
+              suspect: edge > MAX_EDGE,
             };
           }
         }
@@ -272,7 +279,11 @@ async function main() {
       if (best && budgetLeft > 0) {
         recommendations.push(best);
         budgetLeft--;
-        console.log(`   ✅ RECOMMEND: ${best.side} "${best.question}" @ ${(best.price * 100).toFixed(0)}¢ (model ${(best.modelProb * 100).toFixed(0)}%, edge +${(best.edge * 100).toFixed(0)})`);
+        if (best.suspect) {
+          console.log(`   🚩 SUSPECT EDGE (+${(best.edge * 100).toFixed(0)} > maxEdge ${(MAX_EDGE * 100).toFixed(0)}): ${best.side} "${best.question}" — a confident market disagreeing this hard usually means OUR config/model is wrong. Not tradeable; shadow-logged for diagnosis.`);
+        } else {
+          console.log(`   ✅ RECOMMEND: ${best.side} "${best.question}" @ ${(best.price * 100).toFixed(0)}¢ (model ${(best.modelProb * 100).toFixed(0)}%, edge +${(best.edge * 100).toFixed(0)})`);
+        }
         break; // one bet per city per run — next city
       } else if (best) {
         console.log(`   ⏸️  Edge found but daily cap (${MAX_PER_DAY}) reached`);

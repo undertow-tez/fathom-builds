@@ -54,6 +54,10 @@ echo ""
 echo "🚀 Executing $COUNT weather bet(s)..."
 for i in $(seq 0 $((COUNT - 1))); do
   REC=$(echo "$RECS" | jq -c ".[$i]")
+  if [ "$(echo "$REC" | jq -r '.suspect // false')" = "true" ]; then
+    echo "🚩 Skipping suspect-edge recommendation (likely config/model error): $(echo "$REC" | jq -r '.question')"
+    continue
+  fi
   SLUG=$(echo "$REC" | jq -r '.slug')
   QUESTION=$(echo "$REC" | jq -r '.question')
   SIDE=$(echo "$REC" | jq -r '.side')
