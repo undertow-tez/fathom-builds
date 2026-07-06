@@ -106,7 +106,10 @@ Crons stay installed permanently; `machine.sh start/stop` toggles flag files the
 "30 13 * * *"         bash /path/to/scripts/shadow-cycle.sh --weather
 "30 16 * * *"         bash /path/to/scripts/shadow-cycle.sh --weather
 "0 21 * * *"          bash /path/to/scripts/shadow-cycle.sh --weather
+"15 22 * * *"         bash /path/to/scripts/sync-data.sh    # publish data to the branch daily
 ```
+
+`sync-data.sh` commits shadow/live logs + the scoreboard to `data/` on the branch, so analysis (human or Claude Code session) can happen anywhere without access to this machine.
 
 **Control:**
 ```bash
@@ -155,7 +158,8 @@ Judge strategies on **EV per dollar staked at entry prices**, never on win rate.
 | `bet.sh` | Generic Bankr bet: lock → submit → log → confirm shares |
 | `redeem-all.sh` | Sweep unresolved bets, redeem winners via Bankr |
 | `pnl.js` | Real P&L from bets.jsonl (`--today`, `--json`) |
-| `machine.sh` | `start\|stop\|status [btc\|weather\|all]` |
+| `machine.sh` | `start\|stop\|status [btc\|weather\|shadow\|all]` |
+| `sync-data.sh` | Daily: publish shadow/live logs + reports to the branch |
 | `lib/bankr.sh` | Bankr submit/status/poll (skill scripts or REST fallback) |
 
 ## Hard rules (paid for with real losses)
