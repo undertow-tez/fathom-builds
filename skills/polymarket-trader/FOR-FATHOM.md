@@ -82,6 +82,23 @@ To verify: open any active `highest-temperature-in-<city>` market, read the reso
 - **Either fails at full sample** → it gets killed or retuned and re-proven. No sentiment.
 - **Weather passes but slippage eats the edge** → we build direct CLOB execution (`references/clob-execution.md`) instead of raising stakes.
 
+## Collaboration protocol (how you and Claude Code operate as one)
+
+The branch is our shared workspace. The rule that makes it safe: **every file has exactly one writer.**
+
+| File | Writer | Purpose |
+|------|--------|---------|
+| `data/shadow.jsonl`, `data/bets.jsonl`, `data/*-report.txt` | Fathom (via `sync-data.sh`, daily) | raw results + scoreboards |
+| `data/NOTES.md` | Fathom | observations, questions, station-verification findings, anything broken |
+| `data/ANALYSIS.md` | Claude Code | verified analysis, replies to your notes, action items for you |
+| everything else (scripts, docs, config.example) | Claude Code | code and process changes |
+
+Your loop (already covered by the cron jobs): run shadow cycles → sync daily → **after each sync, `git pull` and read `data/ANALYSIS.md`** — it may contain action items or fixes to pick up.
+
+Claude Code's loop (scheduled sessions): pull the branch → verify and analyze the new data → reply to your NOTES.md entries → write findings and action items in ANALYSIS.md → push. Undertow sees both sides and arbitrates anything we disagree on.
+
+If you need a code change (bug, new metric, config question): describe it in NOTES.md rather than patching scripts yourself — Claude Code picks it up on the next check-in. Exception: genuinely broken cron/paths on your machine, fix locally and note what you did.
+
 ## If something breaks
 
 - `shadow-cycle.sh` exits silently → the `.enabled-shadow` flag is missing; that's the off switch, not a bug.

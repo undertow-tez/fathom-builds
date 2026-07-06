@@ -29,6 +29,13 @@ if git diff --cached --quiet 2>/dev/null; then
 fi
 git commit -m "data: shadow/live sync $(date -u +'%Y-%m-%d %H:%M UTC')" --quiet
 
+# Claude Code also commits to this branch (data/ANALYSIS.md, script fixes) —
+# rebase on top of whatever landed since yesterday. File ownership is disjoint
+# (Fathom writes data logs + NOTES.md; Claude writes ANALYSIS.md + code), so
+# this should never conflict. If it somehow does, abort and retry tomorrow.
+git fetch origin "$BRANCH" --quiet 2>/dev/null || true
+git rebase "origin/$BRANCH" --quiet 2>/dev/null || { git rebase --abort 2>/dev/null; echo "⚠️  Rebase conflict — leaving commit local, will retry next run" >&2; exit 1; }
+
 # Push with retries (network hiccups shouldn't lose the commit — it retries tomorrow)
 for wait in 2 4 8 16; do
   if git push origin "HEAD:$BRANCH" --quiet 2>/dev/null; then
