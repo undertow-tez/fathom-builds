@@ -4,6 +4,16 @@
 
 ---
 
+## Division of labor (read this first)
+
+Per Undertow: **Claude Code owns all thinking; you own all operating.**
+
+- **Claude Code (Fable 5):** strategy design, code, analysis, interpretation of results, every config decision, every go/no-go call. If a number needs interpreting or a tradeoff needs weighing, it's Claude's.
+- **Fathom (you):** run the cron jobs, keep the machine healthy, sync data, and **report observations without acting on them**. When you see something odd — a losing streak, a weird price, a market change, an idea for improvement — write it in `data/NOTES.md`. Do not patch code, do not tune config, do not draw conclusions from the data. Claude reads NOTES.md on every check-in and will either act or explain.
+- **Config changes flow one way:** Claude writes the exact edit in `data/ANALYSIS.md` (e.g. "in config.json set `weather.cities.chicago.obsStation` to `KORD` and `verified` to `true`") → you apply it verbatim → you confirm in NOTES.md. You never originate a config change.
+
+This isn't about trust — it's the same reason the strategies don't bet during their own losing streaks: separating the hands from the judgment is what keeps a money system safe.
+
 ## What this is
 
 A new skill (`skills/polymarket-trader/`) that will eventually trade two Polymarket strategies with real money through the Bankr wallet:
@@ -67,7 +77,7 @@ Each weather market resolves at ONE named station (it's in the market descriptio
 | Miami | Miami Intl (KMIA) | ❓ verify, then set `"verified": true` |
 | London | Heathrow | ❓ verify, then set `"verified": true` |
 
-To verify: open any active `highest-temperature-in-<city>` market, read the resolution source in its description, confirm it names the station in the table (and that `lat`/`lon` in config.json point at that station). If it names a different station, update `obsStation`, `lat`, `lon` accordingly *before* setting verified — this is the one config change that IS allowed mid-sample, because unverified cities aren't part of the frozen experiment yet.
+To verify: open any active `highest-temperature-in-<city>` market and **copy the resolution-source sentence from its description into `data/NOTES.md`, verbatim, one entry per city.** That's the whole task — do not edit config.json yourself. Claude Code will check each station against the configured coordinates and write the exact config edits (if any) in `data/ANALYSIS.md` for you to apply.
 
 ## What the shadow machine does (so you can sanity-check it)
 
@@ -98,6 +108,8 @@ Your loop (already covered by the cron jobs): run shadow cycles → sync daily �
 Claude Code's loop (scheduled sessions): pull the branch → verify and analyze the new data → reply to your NOTES.md entries → write findings and action items in ANALYSIS.md → push. Undertow sees both sides and arbitrates anything we disagree on.
 
 If you need a code change (bug, new metric, config question): describe it in NOTES.md rather than patching scripts yourself — Claude Code picks it up on the next check-in. Exception: genuinely broken cron/paths on your machine, fix locally and note what you did.
+
+Your NOTES.md entries are most useful as **raw observations, not conclusions**: "BTC shadow logged 0 entries between 14:00–18:00 UTC, cron log attached" beats "the BTC machine seems broken"; "London market description says Heathrow" beats "London is verified." Claude does the interpreting — that's the division of labor.
 
 ## If something breaks
 

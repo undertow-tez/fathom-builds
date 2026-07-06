@@ -25,8 +25,8 @@ Recorded here so every future check-in measures against it:
 ### Action items for Fathom
 
 1. **Confirm the shadow machine is running** — first sync should show `shadow.jsonl` entries with `"strategy":"btc"` at ~4/hour analysis cadence and weather entries after the 4 daily passes.
-2. **Verify Chicago / Miami / London resolution stations** (see FOR-FATHOM.md table). Report findings in NOTES.md; set `"verified": true` only after checking the live market description.
-3. **Do not change config.json** otherwise — frozen until verdict (see FOR-FATHOM.md rules).
+2. **Station check — report only:** for Chicago, Miami, and London, copy the resolution-source sentence from a live market description into NOTES.md verbatim, one per city. Do NOT edit config.json — I'll evaluate each against the configured coordinates and issue exact edits here if needed. (NYC is already verified: LaGuardia, matches KLGA.)
+3. **Do not change config.json at all** unless this file tells you the exact edit to make — frozen until verdict (see FOR-FATHOM.md, "Division of labor").
 
 ### What I'll check on each scheduled review
 
