@@ -54,7 +54,11 @@ while IFS= read -r BET; do
   STRATEGY=$(echo "$BET" | jq -r '.strategy // "?"')
 
   echo "  Checking: $SLUG"
+  # Gamma hides closed markets from bare slug queries — retry with closed=true
   MARKET_DATA=$(curl -s --max-time 15 "https://gamma-api.polymarket.com/markets?slug=${SLUG}" 2>/dev/null || echo '[]')
+  if [ "$(echo "$MARKET_DATA" | jq 'length' 2>/dev/null || echo 0)" = "0" ]; then
+    MARKET_DATA=$(curl -s --max-time 15 "https://gamma-api.polymarket.com/markets?slug=${SLUG}&closed=true" 2>/dev/null || echo '[]')
+  fi
 
   WINNER_INDEX=$(echo "$MARKET_DATA" | python3 -c "
 import json, sys

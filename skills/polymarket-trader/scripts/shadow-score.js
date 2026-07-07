@@ -44,12 +44,20 @@ function loadLines() {
 }
 
 async function fetchMarket(slug) {
-  const res = await fetch(`https://gamma-api.polymarket.com/markets?slug=${slug}`, {
-    headers: { 'User-Agent': 'polymarket-trader/1.0 (shadow)' },
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return Array.isArray(data) ? data[0] : null;
+  // Gamma's slug endpoint stops returning markets once they CLOSE unless
+  // closed=true is passed (observed 2026-07-08; the bare query worked on
+  // closed markets as late as Mar 2026). Try open first, then closed.
+  for (const suffix of ['', '&closed=true']) {
+    try {
+      const res = await fetch(`https://gamma-api.polymarket.com/markets?slug=${slug}${suffix}`, {
+        headers: { 'User-Agent': 'polymarket-trader/1.0 (shadow)' },
+      });
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (Array.isArray(data) && data[0]) return data[0];
+    } catch { /* transient network/proxy error — try next variant; caller retries next cycle */ }
+  }
+  return null;
 }
 
 async function resolvePending(lines) {
