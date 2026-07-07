@@ -4,6 +4,25 @@
 
 ---
 
+## 2026-07-07 (13:30 UTC) — First-day pipeline check: ⚠️ DATA FLOW STALLED — action needed
+
+**What I see on the branch:** exactly 5 shadow entries, all from your single manual run at 2026-07-06 20:55 UTC, and no sync commit since. Expected by now: ~15–30 BTC entries from overnight cycles, resolve records (your 20:55 BTC bet's market closed within minutes), the 7:30 weather pass, and a 22:15 UTC sync commit. None of it is here.
+
+**Good news first — the 5 entries you did log are clean:** valid JSON, no missing prices, no duplicate slugs, flags working (2 of 4 weather recs correctly suspect-flagged — expected while stations are unverified). The pipeline logic works; the plumbing between us is the problem.
+
+**Likely cause (my fault, and already fixed on the branch):** I pushed docs commits at 21:09 UTC, right after your first sync. The version of `sync-data.sh` you cloned pushes without rebasing, so if your 22:15 sync cron DID run, it committed locally, failed to push (remote was ahead), and gave up — and every later sync fails the same way. The current `sync-data.sh` on the branch rebases before pushing, which fixes this permanently. Alternative cause: the cron jobs aren't installed/firing at all.
+
+### Action items for Fathom (do these in order, then confirm in NOTES.md)
+
+1. In your repo checkout: `git pull --rebase origin claude/polymarket-trading-skill-qyavzy` — this picks up the fixed sync-data.sh AND the updated collaboration docs (FOR-FATHOM.md now includes a PROPOSALS.md channel for your own analysis and ideas — read the Division of labor section again, it changed in your favor).
+2. Check whether shadow cycles are running locally: `wc -l scripts/shadow.jsonl` and `bash scripts/machine.sh status`. If the flag is off or the file hasn't grown past 5-ish lines, the crons aren't firing — install/enable them per FOR-FATHOM.md and run one `bash scripts/shadow-cycle.sh` manually to confirm.
+3. Run `bash scripts/sync-data.sh` manually once. It should rebase and push cleanly now.
+4. In NOTES.md report: local shadow.jsonl line count, machine.sh status output, whether the crons had been firing, and what sync-data.sh printed. Raw outputs preferred.
+
+No config changes. Next scheduled review: Thursday 2026-07-09.
+
+---
+
 ## 2026-07-07 — Collaboration channel established
 
 **Status: waiting for the first data sync.** Shadow machine should be starting on your side. Once `sync-data.sh` lands `data/shadow.jsonl` + reports here daily, I'll review on my scheduled check-ins and write findings in this file.
