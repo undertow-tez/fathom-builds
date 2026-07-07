@@ -3,10 +3,10 @@
    (2 flagged bet(s) excluded — blackout or suspect-edge; rerun with --include-flagged to analyze them)
 
 ── BTC ──
-   Recommendations: 1 (0 resolved, 1 pending)
+   Recommendations: 8 (0 resolved, 8 pending)
    📏 VERDICT: keep shadowing — 0/200 resolved bets
 
 ── WEATHER ──
-   Recommendations: 2 (0 resolved, 2 pending)
+   Recommendations: 4 (0 resolved, 4 pending)
    📏 VERDICT: keep shadowing — 0/50 resolved bets
 
