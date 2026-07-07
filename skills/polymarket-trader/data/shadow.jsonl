@@ -35,3 +35,35 @@
 {"time":"2026-07-07T15:53:10Z","strategy":"btc","slug":"btc-updown-15m-1783439100","market":"Bitcoin Up or Down - July 7, 11:45AM-12:00PM ET","outcome":"UP","outcomeIndex":0,"amount":"5","price":"0.875","flags":["blackout"],"meta":{"score":4.5,"rsi":65.8,"vol":0.0753,"hourly":1.066},"result":"shadow"}
 {"time":"2026-07-07T16:23:12Z","strategy":"btc","slug":"btc-updown-15m-1783440900","market":"Bitcoin Up or Down - July 7, 12:15PM-12:30PM ET","outcome":"UP","outcomeIndex":0,"amount":"5","price":"0.685","flags":["blackout"],"meta":{"score":4.8,"rsi":61.3,"vol":0.0934,"hourly":0.444},"result":"shadow"}
 {"time":"2026-07-07T17:30:18Z","strategy":"weather","slug":"highest-temperature-in-miami-on-july-7-2026-92-93f","market":"Will the highest temperature in Miami be between 92-93°F on July 7?","outcome":"NO","outcomeIndex":1,"amount":"5","price":"0.515","flags":["suspect-edge"],"meta":{"city":"miami","date":"2026-07-07","modelProb":0.994,"edge":0.479},"result":"shadow"}
+{"time":"2026-07-07T17:31:54.226Z","action":"shadow-resolve","slug":"btc-updown-15m-1783370700","strategy":"btc","winnerIndex":1,"result":"❌ LOST"}
+{"time":"2026-07-07T17:31:54.464Z","action":"shadow-resolve","slug":"highest-temperature-in-nyc-on-july-6-2026-70-71f","strategy":"weather","winnerIndex":0,"result":"❌ LOST"}
+{"time":"2026-07-07T17:31:54.583Z","action":"shadow-resolve","slug":"highest-temperature-in-chicago-on-july-6-2026-80-81f","strategy":"weather","winnerIndex":1,"result":"✅ WON"}
+{"time":"2026-07-07T17:31:54.896Z","action":"shadow-resolve","slug":"btc-updown-15m-1783371600","strategy":"btc","winnerIndex":0,"result":"✅ WON"}
+{"time":"2026-07-07T17:31:55.203Z","action":"shadow-resolve","slug":"btc-updown-15m-1783377900","strategy":"btc","winnerIndex":0,"result":"✅ WON"}
+{"time":"2026-07-07T17:31:55.447Z","action":"shadow-resolve","slug":"btc-updown-15m-1783378800","strategy":"btc","winnerIndex":0,"result":"✅ WON"}
+{"time":"2026-07-07T17:31:55.679Z","action":"shadow-resolve","slug":"btc-updown-15m-1783380600","strategy":"btc","winnerIndex":1,"result":"❌ LOST"}
+{"time":"2026-07-07T17:31:55.890Z","action":"shadow-resolve","slug":"btc-updown-15m-1783382400","strategy":"btc","winnerIndex":1,"result":"❌ LOST"}
+{"time":"2026-07-07T17:31:56.105Z","action":"shadow-resolve","slug":"btc-updown-15m-1783383300","strategy":"btc","winnerIndex":0,"result":"✅ WON"}
+{"time":"2026-07-07T17:31:56.477Z","action":"shadow-resolve","slug":"btc-updown-15m-1783385100","strategy":"btc","winnerIndex":0,"result":"✅ WON"}
+{"time":"2026-07-07T17:31:56.951Z","action":"shadow-resolve","slug":"btc-updown-15m-1783395000","strategy":"btc","winnerIndex":1,"result":"❌ LOST"}
+{"time":"2026-07-07T17:31:57.228Z","action":"shadow-resolve","slug":"btc-updown-15m-1783395900","strategy":"btc","winnerIndex":1,"result":"❌ LOST"}
+{"time":"2026-07-07T17:31:57.472Z","action":"shadow-resolve","slug":"btc-updown-15m-1783397700","strategy":"btc","winnerIndex":0,"result":"✅ WON"}
+{"time":"2026-07-07T17:31:57.735Z","action":"shadow-resolve","slug":"btc-updown-15m-1783402200","strategy":"btc","winnerIndex":0,"result":"✅ WON"}
+{"time":"2026-07-07T17:31:58.011Z","action":"shadow-resolve","slug":"btc-updown-15m-1783403100","strategy":"btc","winnerIndex":1,"result":"❌ LOST"}
+{"time":"2026-07-07T17:31:58.359Z","action":"shadow-resolve","slug":"btc-updown-15m-1783404900","strategy":"btc","winnerIndex":0,"result":"✅ WON"}
+{"time":"2026-07-07T17:31:58.719Z","action":"shadow-resolve","slug":"btc-updown-15m-1783405800","strategy":"btc","winnerIndex":0,"result":"✅ WON"}
+{"time":"2026-07-07T17:31:59.549Z","action":"shadow-resolve","slug":"btc-updown-15m-1783406700","strategy":"btc","winnerIndex":0,"result":"✅ WON"}
+{"time":"2026-07-07T17:32:00.265Z","action":"shadow-resolve","slug":"btc-updown-15m-1783412100","strategy":"btc","winnerIndex":1,"result":"❌ LOST"}
+{"time":"2026-07-07T17:32:00.882Z","action":"shadow-resolve","slug":"btc-updown-15m-1783413900","strategy":"btc","winnerIndex":0,"result":"✅ WON"}
+{"time":"2026-07-07T17:32:01.367Z","action":"shadow-resolve","slug":"btc-updown-15m-1783414800","strategy":"btc","winnerIndex":0,"result":"✅ WON"}
+{"time":"2026-07-07T17:32:01.627Z","action":"shadow-resolve","slug":"btc-updown-15m-1783416600","strategy":"btc","winnerIndex":0,"result":"✅ WON"}
+{"time":"2026-07-07T17:32:01.900Z","action":"shadow-resolve","slug":"btc-updown-15m-1783417500","strategy":"btc","winnerIndex":1,"result":"❌ LOST"}
+{"time":"2026-07-07T17:32:02.107Z","action":"shadow-resolve","slug":"btc-updown-15m-1783419300","strategy":"btc","winnerIndex":1,"result":"❌ LOST"}
+{"time":"2026-07-07T17:32:02.726Z","action":"shadow-resolve","slug":"btc-updown-15m-1783422900","strategy":"btc","winnerIndex":0,"result":"✅ WON"}
+{"time":"2026-07-07T17:32:03.356Z","action":"shadow-resolve","slug":"btc-updown-15m-1783423800","strategy":"btc","winnerIndex":0,"result":"✅ WON"}
+{"time":"2026-07-07T17:32:03.563Z","action":"shadow-resolve","slug":"btc-updown-15m-1783425600","strategy":"btc","winnerIndex":0,"result":"✅ WON"}
+{"time":"2026-07-07T17:32:03.853Z","action":"shadow-resolve","slug":"btc-updown-15m-1783426500","strategy":"btc","winnerIndex":1,"result":"❌ LOST"}
+{"time":"2026-07-07T17:32:04.160Z","action":"shadow-resolve","slug":"btc-updown-15m-1783431900","strategy":"btc","winnerIndex":1,"result":"❌ LOST"}
+{"time":"2026-07-07T17:32:04.774Z","action":"shadow-resolve","slug":"btc-updown-15m-1783438200","strategy":"btc","winnerIndex":0,"result":"✅ WON"}
+{"time":"2026-07-07T17:32:05.379Z","action":"shadow-resolve","slug":"btc-updown-15m-1783439100","strategy":"btc","winnerIndex":0,"result":"✅ WON"}
+{"time":"2026-07-07T17:32:05.577Z","action":"shadow-resolve","slug":"btc-updown-15m-1783440900","strategy":"btc","winnerIndex":0,"result":"✅ WON"}

@@ -1,4 +1,3 @@
-👻 Resolved 32 shadow bet(s)
 👻 SHADOW REPORT — hypothetical results at real entry prices, no money moved
 
    (6 flagged bet(s) excluded — blackout or suspect-edge; rerun with --include-flagged to analyze them)
