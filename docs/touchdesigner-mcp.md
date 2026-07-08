@@ -28,12 +28,27 @@ touchdesigner-docs: bash .claude/scripts/td-mcp-launcher.sh - √ Connected
 
 ## Using it outside this repo (any project, one-time)
 
-To have it in every project on your own machine, install at user scope:
+To have it in every project on your own machine, install at user scope.
+
+**macOS / Linux:**
 
 ```sh
 npm install -g github:bottobot/touchdesigner-mcp-server
 claude mcp add --scope user touchdesigner-docs -- td-mcp
 ```
+
+**Windows:** the npm global install may not put a working `td-mcp`
+shim on PATH, so point Claude Code at the installed script directly.
+Find your global module path with `npm root -g` (typically
+`C:\Users\<you>\AppData\Roaming\npm\node_modules`), then:
+
+```bat
+npm install -g github:bottobot/touchdesigner-mcp-server
+claude mcp add --scope user touchdesigner-docs -- node "C:\Users\<you>\AppData\Roaming\npm\node_modules\@bottobot\td-mcp\index.js"
+```
+
+Verify on any platform with `claude mcp list` — you should see
+`touchdesigner-docs … √ Connected`.
 
 ## Known issue: the npm package is broken
 
