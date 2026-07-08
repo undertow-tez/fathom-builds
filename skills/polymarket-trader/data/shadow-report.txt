@@ -1,18 +1,18 @@
 👻 SHADOW REPORT — hypothetical results at real entry prices, no money moved
 
-   (6 flagged bet(s) excluded — blackout or suspect-edge; rerun with --include-flagged to analyze them)
+   (8 flagged bet(s) excluded — blackout or suspect-edge; rerun with --include-flagged to analyze them)
 
 ── BTC ──
-   Recommendations: 27 (27 resolved, 0 pending)
-   Record: 16W/11L (59.3% WR) at avg entry 65¢
-   Hypothetical: staked $135.00, net $-11.70
-   ⭐ EV per $1 staked: -8.7¢  (threshold: +5¢)
-   📏 VERDICT: keep shadowing — 27/200 resolved bets
+   Recommendations: 36 (36 resolved, 0 pending)
+   Record: 24W/12L (66.7% WR) at avg entry 66¢
+   Hypothetical: staked $180.00, net +$7.73
+   ⭐ EV per $1 staked: +4.3¢  (threshold: +5¢)
+   📏 VERDICT: keep shadowing — 36/200 resolved bets
 
 ── WEATHER ──
-   Recommendations: 4 (1 resolved, 3 pending)
-   Record: 1W/0L (100.0% WR) at avg entry 51¢
-   Hypothetical: staked $5.00, net +$4.90
-   ⭐ EV per $1 staked: +98.0¢  (threshold: +5¢)
-   📏 VERDICT: keep shadowing — 1/50 resolved bets
+   Recommendations: 7 (2 resolved, 5 pending)
+   Record: 2W/0L (100.0% WR) at avg entry 54¢
+   Hypothetical: staked $10.00, net +$8.60
+   ⭐ EV per $1 staked: +86.0¢  (threshold: +5¢)
+   📏 VERDICT: keep shadowing — 2/50 resolved bets
 
