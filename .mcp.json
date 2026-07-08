@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "touchdesigner-docs": {
+      "command": "bash",
+      "args": [".claude/scripts/td-mcp-launcher.sh"]
+    }
+  }
+}
