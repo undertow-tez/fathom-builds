@@ -1,0 +1,6 @@
+{
+  "enableAllProjectMcpServers": true,
+  "env": {
+    "MCP_TIMEOUT": "120000"
+  }
+}

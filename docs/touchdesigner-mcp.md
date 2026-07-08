@@ -1,36 +1,49 @@
 # TouchDesigner Docs MCP Server (bottobot td-mcp)
 
-Setup notes for the [bottobot TouchDesigner MCP server](https://github.com/bottobot/touchdesigner-mcp-server)
-(npm: `@bottobot/td-mcp`) with Claude Code. It provides TouchDesigner
-documentation tools (operators, Python API, tutorials, GLSL patterns,
-workflow suggestions) plus `td_*` tools for controlling a live
-TouchDesigner instance.
+This repo is set up so the [bottobot TouchDesigner MCP server](https://github.com/bottobot/touchdesigner-mcp-server)
+(npm: `@bottobot/td-mcp`) loads **automatically** in every Claude Code
+session opened in this project — cloud or local. It provides
+TouchDesigner documentation tools (operators, Python API, tutorials,
+GLSL patterns, workflow suggestions) plus `td_*` tools for controlling
+a live TouchDesigner instance.
 
-## Known issue: the npm package is broken
+## How the automatic setup works
 
-Every published npm version (including `@bottobot/td-mcp@2.8.0`) is
-missing `wiki/operator-data-manager.js` from the tarball, so
-`npx -y @bottobot/td-mcp` crashes on startup with `ERR_MODULE_NOT_FOUND`.
+Three committed files make it zero-setup:
 
-**Workaround:** install from the GitHub repo instead, which ships the
-complete source (v3.0.0 as of 2026-07-08):
+- **`.mcp.json`** — project-scoped MCP config; Claude Code reads it on
+  session start and launches the server.
+- **`.claude/scripts/td-mcp-launcher.sh`** — launcher that installs
+  `td-mcp` from GitHub on first use (fresh containers), then execs it.
+  Warm sessions skip the install.
+- **`.claude/settings.json`** — auto-approves the project MCP server
+  (`enableAllProjectMcpServers`) and raises `MCP_TIMEOUT` so a cold
+  first-time install doesn't trip the startup timeout.
+
+Nothing to run manually. Verify with `claude mcp list`:
+
+```
+touchdesigner-docs: bash .claude/scripts/td-mcp-launcher.sh - √ Connected
+```
+
+## Using it outside this repo (any project, one-time)
+
+To have it in every project on your own machine, install at user scope:
 
 ```sh
 npm install -g github:bottobot/touchdesigner-mcp-server
 claude mcp add --scope user touchdesigner-docs -- td-mcp
 ```
 
-Verify with:
+## Known issue: the npm package is broken
 
-```sh
-claude mcp list
-# touchdesigner-docs: td-mcp - √ Connected
-```
-
-Note: `npx -y github:bottobot/touchdesigner-mcp-server` also works, but
-pinning a commit (`#<sha>`) trips an npm bug ("GitFetcher requires an
-Arborist constructor"), and the unpinned form re-resolves the repo on
-cold caches — the global install above is the reliable path.
+Every published npm version (including `@bottobot/td-mcp@2.8.0`) is
+missing `wiki/operator-data-manager.js` from the tarball, so
+`npx -y @bottobot/td-mcp` crashes on startup with `ERR_MODULE_NOT_FOUND`.
+That's why the launcher installs from the GitHub repo, which ships the
+complete source (v3.0.0 as of 2026-07-08). Pinning a commit via
+`npx github:...#<sha>` also fails ("GitFetcher requires an Arborist
+constructor" npm bug), hence the global-install approach.
 
 ## Related project (not this one)
 
