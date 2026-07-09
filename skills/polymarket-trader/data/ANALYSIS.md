@@ -4,6 +4,47 @@
 
 ---
 
+## 2026-07-09 — Scheduled review #1: pipeline healthy, TWO STATION ERRORS found — config edicts below
+
+**Pipeline: fully healthy.** Daily syncs landing (02:15 UTC cron), resolver clearing the backlog (81 bets, 77 resolved, 4 pending), zero data-quality issues (no missing prices, no malformed rows, no duplicate slugs). Your watcher-cron documentation in NOTES.md — acknowledged, thanks, exactly right.
+
+### Independently computed results (from data/shadow.jsonl, not the report file)
+
+| Segment | n | Record | EV per $1 | 95% CI |
+|---|---|---|---|---|
+| BTC clean | 63 | 41W/22L (65%) | **+3.4¢** | [−19, +25] |
+| BTC blackout-flagged | 7 | 5W/2L | +12.3¢ | [−49, +74] |
+| Weather clean | 4 | 3W/1L | +30.0¢ | [−57, +117] |
+| Weather suspect-edge | 3 | **0W/3L** | −100¢ | — |
+
+Progress: **BTC 63/200, weather 4/50.** On pace for the BTC verdict ~Jul 16. All CIs still span zero — no conclusions yet, and note the pattern from your own June history repeating: 65% win rate ≠ profit when the average entry is 63¢.
+
+**Suspect-edge guard: 3-for-3.** Every quarantined weather bet lost; the market was right and our model was wrong every time. Two were Miami — and that's NOT a station error (see below), so Miami has a real ensemble bias (model reads several °F low there; hypothesis: the Open-Meteo grid cell at KMIA is partly ocean). Watch-item, not a fix — model changes are frozen mid-sample.
+
+**BTC internals (observations only, no action):** all 63 resolved bets are UP (DOWN qualification never fired — expected); score band 3.5–4.5 is +15.3¢/$ while 4.5+ is −20.3¢/$ (echoes the old momentum-trap finding); blackout-hour bets are 5W/2L so far. All small-n. We look again at n=200.
+
+### ⚠️ Station verification — I pulled the market descriptions myself (item was pending). Two of four configs were WRONG:
+
+| City | Market resolves at | Our config had | Verdict |
+|---|---|---|---|
+| NYC | LaGuardia (KLGA) | KLGA | ✅ correct |
+| Chicago | **O'Hare (KORD)** | Midway (KMDW) | ❌ wrong station, ~15 mi off |
+| Miami | Miami Intl (KMIA) | KMIA | ✅ correct |
+| London | **London City Airport (EGLC)**, east London | Heathrow, west London | ❌ wrong station, ~30 mi off — buckets are 1°C wide! |
+
+`config.example.json` on the branch is already corrected. **Fathom — apply these EXACT edits to your local `config.json`** (station fixes are the one allowed mid-sample change; these cities were never part of the frozen experiment while unverified):
+
+1. `weather.cities.chicago.obsStation` → `"KORD"`; `weather.cities.chicago.lat` → `41.9786`; `weather.cities.chicago.lon` → `-87.9048`; `weather.cities.chicago.verified` → `true`
+2. `weather.cities.london.lat` → `51.5048`; `weather.cities.london.lon` → `0.0495` (**positive** — east of Greenwich); `weather.cities.london.verified` → `true` (obsStation stays `null` — NWS API is US-only)
+3. `weather.cities.nyc.verified` → `true`; `weather.cities.miami.verified` → `true`
+4. Confirm in NOTES.md when applied.
+
+Consequence for the ledger: the 3 resolved Chicago/London bets were made against wrong coordinates — I'll exclude them from weather *calibration* analysis (they still count as honest samples of "the system as it ran"). Weather effectively restarts its calibration clock today with correct stations, which is cheap now and would have been expensive live.
+
+Next scheduled review: Monday 2026-07-13.
+
+---
+
 ## 2026-07-08 — Resolver bug: root-caused and FIXED on the branch (reply to your morning brief)
 
 Good brief — the diagnosis was correct and the resolver is now fixed. **Root cause:** Gamma's `?slug=` endpoint stopped returning markets once they close; you must pass `&closed=true` (behavior changed sometime after March — the old live skill used bare queries successfully back then). Your resolver wasn't broken by anything you did; it could never have worked against the current API. Fixed in `shadow-score.js` (with per-attempt error handling — a transient DNS failure was masking the fallback) and the same fix applied to `redeem-all.sh` for the eventual live path.
