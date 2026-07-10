@@ -29,13 +29,14 @@ const CFG = {
 };
 const QP_BASE = CFG.park.x - CFG.park.qp.r;
 
-// LoFi dusk palette
+// "sketchbook come to life": paper world, ink outlines, crayon accents
 const PAL = {
-  skyTop: '#3b2d5e', skyMid: '#8a5a8f', skyLow: '#e8956d', sun: '#ffd9a0',
-  fog: 0xc47c72, asphalt: 0x45405a, asphalt2: 0x3c3852,
-  box: 0x6b5a7d, boxSide: 0x574a6b, coping: 0x0052ff, rail: 0x0052ff,
-  silhouette: 0x2c2340, deck: 0x4a4a58, deckBelow: 0x0052ff,
-  cream: '#fff3dd',
+  skyTop: '#efe2c4', skyMid: '#f5ecd6', skyLow: '#f9f2e0', sun: '#f19a5b',
+  fog: 0xf3ead4, paper: 0xf3ebd7, paperDark: 0xe6dbc0,
+  box: 0xf0e7d1, coping: 0x0052ff, rail: 0x0052ff,
+  ink: 0x2e2924, silhouette: 0x3c352c, deck: 0x4a4a58, deckBelow: 0x0052ff,
+  inkCss: '#2e2924', paperCss: '#f3ebd7',
+  crayonRed: '#d95b43', crayonGreen: '#3f9d58',
 };
 
 // ============================================================ INPUT
@@ -182,11 +183,11 @@ renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.35;
+renderer.toneMappingExposure = 1.15;
 document.body.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0xd98a70, 0.005);
+scene.fog = new THREE.FogExp2(PAL.fog, 0.0038);
 { // dusk gradient sky
   const c = document.createElement('canvas'); c.width = 2; c.height = 256;
   const g = c.getContext('2d');
@@ -202,13 +203,13 @@ const camera = new THREE.PerspectiveCamera(65, innerWidth / innerHeight, 0.1, 50
 camera.position.set(0, 3, 10);
 
 // lights — low warm sun + purple bounce
-const hemi = new THREE.HemisphereLight(0xcaa0e8, 0x4a3d66, 1.45);
+const hemi = new THREE.HemisphereLight(0xfff6e0, 0xcbbfa4, 1.15);
 scene.add(hemi);
-const fill = new THREE.DirectionalLight(0x9db4ff, 0.5); // cool fill from the dark side
+const fill = new THREE.DirectionalLight(0xbcd4ff, 0.35); // cool fill from the dark side
 fill.position.set(30, 18, -25);
 scene.add(fill);
-const sun = new THREE.DirectionalLight(0xffb87a, 1.6);
-sun.position.set(-40, 22, 30);
+const sun = new THREE.DirectionalLight(0xffedc8, 1.15);
+sun.position.set(-40, 30, 30);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
 sun.shadow.camera.left = -45; sun.shadow.camera.right = 45;
@@ -216,42 +217,119 @@ sun.shadow.camera.top = 45; sun.shadow.camera.bottom = -45;
 sun.shadow.camera.far = 150;
 scene.add(sun);
 
-// sun disc on horizon
-{
-  const disc = new THREE.Mesh(new THREE.CircleGeometry(26, 40),
-    new THREE.MeshBasicMaterial({ color: PAL.sun, fog: false, transparent: true, opacity: 0.9 }));
-  disc.position.set(-190, 16, 120); disc.lookAt(0, 4, 0);
-  scene.add(disc);
+// ---------- sketch helpers ----------
+const inkLineMat = new THREE.LineBasicMaterial({ color: PAL.ink });
+function sketchEdges(mesh, jitter = 0.03, threshold = 25) {
+  // double-stroked, jittered edge lines = hand-drawn outline
+  const eg = new THREE.EdgesGeometry(mesh.geometry, threshold);
+  for (let pass = 0; pass < 2; pass++) {
+    const g = eg.clone();
+    const pos = g.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      pos.setXYZ(i,
+        pos.getX(i) + (Math.random() - 0.5) * jitter,
+        pos.getY(i) + (Math.random() - 0.5) * jitter,
+        pos.getZ(i) + (Math.random() - 0.5) * jitter);
+    }
+    mesh.add(new THREE.LineSegments(g, inkLineMat));
+  }
+  if (mesh.material) { // push faces back so the ink sits on top
+    mesh.material.polygonOffset = true;
+    mesh.material.polygonOffsetFactor = 1;
+    mesh.material.polygonOffsetUnits = 1;
+  }
+}
+function wobblyLoop(points, y = 0.02, jitter = 0.06) {
+  const verts = [];
+  for (let i = 0; i < points.length; i++) {
+    const [a, b] = [points[i], points[(i + 1) % points.length]];
+    const steps = Math.max(2, Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) / 2));
+    for (let s = 0; s < steps; s++) {
+      for (const t of [s / steps, (s + 1) / steps]) {
+        verts.push(
+          a[0] + (b[0] - a[0]) * t + (Math.random() - 0.5) * jitter, y,
+          a[1] + (b[1] - a[1]) * t + (Math.random() - 0.5) * jitter);
+      }
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+  return new THREE.LineSegments(g, inkLineMat);
 }
 
-// ground with painted texture
-function asphaltTexture() {
+// doodle sun: crayon disc + hand-drawn rays
+{
+  const grp = new THREE.Group();
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(16, 36),
+    new THREE.MeshBasicMaterial({ color: PAL.sun, fog: false }));
+  grp.add(disc);
+  const rays = [];
+  for (let i = 0; i < 11; i++) {
+    const a = (i / 11) * Math.PI * 2 + 0.2;
+    const r1 = 20 + Math.random() * 2, r2 = r1 + 6 + Math.random() * 5;
+    rays.push(Math.cos(a) * r1, Math.sin(a) * r1, 0, Math.cos(a) * r2, Math.sin(a) * r2, 0);
+  }
+  const rg = new THREE.BufferGeometry();
+  rg.setAttribute('position', new THREE.Float32BufferAttribute(rays, 3));
+  grp.add(new THREE.LineSegments(rg, new THREE.LineBasicMaterial({ color: PAL.sun, fog: false })));
+  grp.position.set(-170, 65, 130); grp.lookAt(0, 4, 0);
+  scene.add(grp);
+}
+// scribble clouds
+{
+  const c = document.createElement('canvas'); c.width = 256; c.height = 128;
+  const g = c.getContext('2d');
+  g.strokeStyle = '#4a4038'; g.lineWidth = 3; g.lineCap = 'round';
+  g.beginPath();
+  for (let i = 0; i < 7; i++) { // bumpy cloud top
+    const x = 30 + i * 30, r = 16 + Math.random() * 10;
+    g.arc(x, 80 - (i % 2) * 14, r, Math.PI, 0);
+  }
+  g.stroke();
+  g.beginPath(); g.moveTo(16, 92); g.lineTo(238, 92); g.stroke();
+  const tex = new THREE.CanvasTexture(c);
+  for (const [x, y, z, s] of [[-90, 42, -140, 1.2], [70, 52, -160, 1], [140, 38, 60, 0.9]]) {
+    const cloud = new THREE.Mesh(new THREE.PlaneGeometry(36 * s, 18 * s),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, fog: false }));
+    cloud.position.set(x, y, z); cloud.lookAt(0, 10, 0);
+    scene.add(cloud);
+  }
+}
+
+// paper ground with pencil hatching
+function paperTexture() {
   const c = document.createElement('canvas'); c.width = c.height = 512;
   const g = c.getContext('2d');
-  g.fillStyle = '#45405a'; g.fillRect(0, 0, 512, 512);
-  for (let i = 0; i < 2600; i++) {
-    g.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.025)' : 'rgba(0,0,0,0.05)';
-    g.fillRect(Math.random() * 512, Math.random() * 512, 2, 2);
+  g.fillStyle = PAL.paperCss; g.fillRect(0, 0, 512, 512);
+  for (let i = 0; i < 1800; i++) { // paper grain
+    g.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.35)' : 'rgba(70,60,45,0.05)';
+    g.fillRect(Math.random() * 512, Math.random() * 512, 2, 1);
   }
-  g.strokeStyle = 'rgba(255,240,210,0.08)'; g.lineWidth = 3;
-  g.strokeRect(24, 24, 464, 464); // faint slab seams
+  g.strokeStyle = 'rgba(46,41,36,0.07)'; g.lineWidth = 2; g.lineCap = 'round';
+  for (let i = 0; i < 90; i++) { // loose diagonal pencil hatches
+    const x = Math.random() * 512, y = Math.random() * 512, l = 14 + Math.random() * 26;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + l, y - l * (0.8 + Math.random() * 0.4)); g.stroke();
+  }
   const tex = new THREE.CanvasTexture(c);
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(10, 6);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(8, 5);
   return tex;
 }
 {
   const p = CFG.park;
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(p.x * 2, p.z * 2),
-    new THREE.MeshStandardMaterial({ map: asphaltTexture(), roughness: 0.95 }));
+    new THREE.MeshStandardMaterial({ map: paperTexture(), roughness: 1 }));
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   scene.add(ground);
-  const apron = new THREE.Mesh( // dark surround out to horizon
+  const apron = new THREE.Mesh( // slightly darker paper out to the horizon
     new THREE.PlaneGeometry(600, 600),
-    new THREE.MeshStandardMaterial({ color: PAL.asphalt2, roughness: 1 }));
+    new THREE.MeshStandardMaterial({ color: PAL.paperDark, roughness: 1 }));
   apron.rotation.x = -Math.PI / 2; apron.position.y = -0.02;
+  apron.receiveShadow = true;
   scene.add(apron);
+  // hand-drawn park boundary
+  scene.add(wobblyLoop([[-p.x, -p.z], [p.x, -p.z], [p.x, p.z], [-p.x, p.z]], 0.02, 0.12));
 }
 
 // quarter pipes (visual mesh matches analytic profile)
@@ -267,8 +345,9 @@ function buildQuarterPipe(sideSign) {
   for (const p of pts) shape.lineTo(p.x, p.y);
   shape.lineTo(CFG.park.x + 1.5, r); shape.lineTo(CFG.park.x + 1.5, 0); shape.closePath();
   const geo = new THREE.ExtrudeGeometry(shape, { depth: zHalf * 2, bevelEnabled: false });
-  const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: PAL.box, roughness: 0.9 }));
+  const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: PAL.box, roughness: 1 }));
   mesh.rotation.x = 0; mesh.position.z = -zHalf;
+  sketchEdges(mesh, 0.05);
   const grp = new THREE.Group();
   grp.add(mesh);
   // Base-blue coping pipe along the lip
@@ -285,26 +364,33 @@ buildQuarterPipe(1); buildQuarterPipe(-1);
 
 // funbox with kickers + graffiti
 function labelTexture(text, sub, w = 512, h = 256) {
+  // crayon graffiti scrawled straight onto the paper
   const c = document.createElement('canvas'); c.width = w; c.height = h;
   const g = c.getContext('2d');
-  g.fillStyle = '#574a6b'; g.fillRect(0, 0, w, h);
-  g.fillStyle = 'rgba(255,243,221,0.9)';
-  g.font = `bold ${h * 0.42}px ui-rounded, "Comic Sans MS", sans-serif`;
   g.textAlign = 'center'; g.textBaseline = 'middle';
-  g.fillText(text, w / 2, h * (sub ? 0.38 : 0.5));
-  if (sub) { g.font = `bold ${h * 0.16}px ui-rounded, sans-serif`; g.fillStyle = '#0052FF'; g.fillText(sub, w / 2, h * 0.75); }
+  g.font = `bold ${h * 0.42}px "Comic Sans MS", ui-rounded, sans-serif`;
+  g.lineWidth = 3; g.strokeStyle = PAL.crayonRed; g.fillStyle = PAL.crayonRed;
+  g.save(); g.translate(w / 2, h * (sub ? 0.38 : 0.5)); g.rotate(-0.03);
+  g.fillText(text, 2, 2); g.strokeText(text, -1, -1); // double-pass = marker wobble
+  g.restore();
+  if (sub) {
+    g.font = `bold ${h * 0.16}px "Comic Sans MS", ui-rounded, sans-serif`;
+    g.fillStyle = '#0052FF';
+    g.save(); g.translate(w / 2, h * 0.75); g.rotate(0.02); g.fillText(sub, 0, 0); g.restore();
+  }
   return new THREE.CanvasTexture(c);
 }
 {
   const f = CFG.park.fun;
   const grp = new THREE.Group();
-  const boxMat = new THREE.MeshStandardMaterial({ color: PAL.box, roughness: 0.9 });
+  const boxMat = new THREE.MeshStandardMaterial({ color: PAL.box, roughness: 1 });
   const box = new THREE.Mesh(new THREE.BoxGeometry(f.flatX * 2, f.topY, f.zHalf * 2), boxMat);
   box.position.set(f.cx, f.topY / 2, f.cz);
+  sketchEdges(box, 0.04);
   grp.add(box);
   // graffiti on the long faces
   const tag = new THREE.Mesh(new THREE.PlaneGeometry(f.flatX * 2 - 0.6, f.topY - 0.16),
-    new THREE.MeshBasicMaterial({ map: labelTexture('mfers', 'we all mfers') }));
+    new THREE.MeshBasicMaterial({ map: labelTexture('mfers', 'we all mfers'), transparent: true }));
   tag.position.set(f.cx, f.topY / 2, f.cz + f.zHalf + 0.01);
   grp.add(tag);
   const tag2 = tag.clone(); tag2.rotation.y = Math.PI; tag2.position.z = f.cz - f.zHalf - 0.01;
@@ -313,7 +399,8 @@ function labelTexture(text, sub, w = 512, h = 256) {
     const shape = new THREE.Shape();
     shape.moveTo(0, 0); shape.lineTo(f.kickL, 0); shape.lineTo(f.kickL, f.topY); shape.closePath();
     const geo = new THREE.ExtrudeGeometry(shape, { depth: f.zHalf * 2, bevelEnabled: false });
-    const wedge = new THREE.Mesh(geo, boxMat);
+    const wedge = new THREE.Mesh(geo, boxMat.clone());
+    sketchEdges(wedge, 0.04);
     wedge.scale.x = -s;
     wedge.position.set(f.cx + s * (f.flatX + f.kickL), 0, f.cz - f.zHalf);
     grp.add(wedge);
@@ -360,29 +447,32 @@ function palm(x, z, s = 1) {
   scene.add(grp);
 }
 palm(-38, -14, 1.2); palm(-40, 6, 1); palm(38, 12, 1.1); palm(39, -8, 0.95); palm(-20, 26, 1.15); palm(18, 25, 1);
-{ // distant skyline
-  const mat = new THREE.MeshBasicMaterial({ color: 0x35304a });
-  for (let i = 0; i < 26; i++) {
+{ // distant sketched skyline: paper boxes with ink outlines
+  for (let i = 0; i < 18; i++) {
     const w = 6 + Math.random() * 10, h = 8 + Math.random() * 26;
-    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, 6), mat);
+    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, 6),
+      new THREE.MeshStandardMaterial({ color: PAL.paperDark, roughness: 1 }));
     const ang = Math.random() * Math.PI * 2, dist = 130 + Math.random() * 60;
     b.position.set(Math.cos(ang) * dist, h / 2, Math.sin(ang) * dist);
+    sketchEdges(b, 0.3);
     scene.add(b);
   }
 }
-{ // gm neon billboard
+{ // "gm" billboard — ink on paper, hand-lettered
   const c = document.createElement('canvas'); c.width = 256; c.height = 160;
   const g = c.getContext('2d');
-  g.fillStyle = '#1c1830'; g.fillRect(0, 0, 256, 160);
-  g.shadowColor = '#7fffcf'; g.shadowBlur = 24;
-  g.fillStyle = '#a8ffdd'; g.font = 'bold 96px ui-rounded, "Comic Sans MS", sans-serif';
-  g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('gm', 128, 84);
+  g.fillStyle = PAL.paperCss; g.fillRect(0, 0, 256, 160);
+  g.strokeStyle = PAL.inkCss; g.lineWidth = 5;
+  g.strokeRect(7, 7, 242, 146); g.strokeRect(11, 12, 236, 140); // double sketch border
+  g.fillStyle = PAL.inkCss; g.font = 'bold 96px "Comic Sans MS", ui-rounded, sans-serif';
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.save(); g.translate(128, 84); g.rotate(-0.04); g.fillText('gm', 0, 0); g.restore();
   const sign = new THREE.Mesh(new THREE.PlaneGeometry(6, 3.75),
     new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c) }));
   sign.position.set(10, 5.4, -26); sign.rotation.y = -0.25;
   scene.add(sign);
   const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 5.4),
-    new THREE.MeshBasicMaterial({ color: PAL.silhouette }));
+    new THREE.MeshBasicMaterial({ color: PAL.ink }));
   pole.position.set(10, 2.7, -26.2);
   scene.add(pole);
 }
@@ -421,6 +511,8 @@ const skater = new THREE.Group();  // origin at board contact point
 scene.add(skater);
 
 // -- board built from primitives
+const BOARD_SCALE = 1.5;
+const DECK_TOP = 0.115 * BOARD_SCALE;
 const board = new THREE.Group();
 const boardSpin = new THREE.Group();   // trick rotations happen here
 {
@@ -449,14 +541,14 @@ const boardSpin = new THREE.Group();   // trick rotations happen here
     truck.position.set(xs * 0.6, 0.07, zs); boardSpin.add(truck);
   }
   boardSpin.traverse((o) => { o.castShadow = true; });
-  board.scale.setScalar(1.18); // reads better at gameplay camera distance
+  board.scale.setScalar(BOARD_SCALE); // chunky cartoon proportions to match the mfer
   board.add(boardSpin);
   skater.add(board);
 }
 
 // -- character (GLB) with hand-posed skate stance
 const charGroup = new THREE.Group();
-charGroup.position.y = 0.115;               // feet on deck
+charGroup.position.y = DECK_TOP;            // feet on deck
 charGroup.rotation.y = -Math.PI / 2 + 0.55; // regular stance across the board
 skater.add(charGroup);
 const charLean = new THREE.Group();          // lean/tuck applied here
@@ -556,7 +648,7 @@ function poseCharacter(dt) {
     if (n) {
       mid.divideScalar(n);
       // correction computed in skater space → re-express in the model's parent space
-      const corr = new THREE.Vector3(-mid.x * 0.5, (0.13 - minY) * 0.6, -mid.z * 0.5);
+      const corr = new THREE.Vector3(-mid.x * 0.5, (DECK_TOP + 0.015 - minY) * 0.6, -mid.z * 0.5);
       corr.applyQuaternion(skater.getWorldQuaternion(new THREE.Quaternion()));
       corr.applyQuaternion(charLean.getWorldQuaternion(new THREE.Quaternion()).invert());
       model.position.add(corr);
@@ -884,18 +976,19 @@ function endRun() {
 const HUD = (() => {
   const css = document.createElement('style');
   css.textContent = `
-    html,body{margin:0;height:100%;overflow:hidden;background:#2b2440;
-      font-family:ui-rounded,'Segoe UI',system-ui,sans-serif;-webkit-user-select:none;user-select:none}
+    html,body{margin:0;height:100%;overflow:hidden;background:${PAL.paperCss};
+      font-family:'Comic Sans MS',ui-rounded,'Segoe UI',system-ui,sans-serif;-webkit-user-select:none;user-select:none}
     canvas{display:block}
-    #hud{position:fixed;inset:0;pointer-events:none;color:${PAL.cream};
-      text-shadow:0 2px 8px rgba(30,20,50,.6)}
+    #hud{position:fixed;inset:0;pointer-events:none;color:${PAL.inkCss};
+      text-shadow:0 1px 0 rgba(255,255,255,.55)}
     #score{position:absolute;top:14px;left:18px;font-size:clamp(22px,4vw,34px);font-weight:800}
     #timer{position:absolute;top:14px;right:18px;font-size:clamp(22px,4vw,34px);font-weight:800;
       font-variant-numeric:tabular-nums}
     #combo{position:absolute;bottom:96px;left:0;right:0;text-align:center;
       font-size:clamp(15px,2.6vw,22px);font-weight:700;min-height:1.4em;opacity:.95}
     #special{position:absolute;bottom:74px;left:50%;transform:translateX(-50%);
-      width:min(320px,60vw);height:10px;border-radius:6px;background:rgba(255,243,221,.18);overflow:hidden}
+      width:min(320px,60vw);height:10px;border-radius:6px;background:rgba(46,41,36,.15);
+      outline:2px solid rgba(46,41,36,.4);overflow:hidden}
     #specialFill{height:100%;width:0%;border-radius:6px;background:linear-gradient(90deg,#0052ff,#7fffcf);
       transition:width .15s}
     #special.full #specialFill{background:linear-gradient(90deg,#ffd700,#fff3aa);
@@ -908,21 +1001,23 @@ const HUD = (() => {
       70%{opacity:1;transform:translate(-50%,-60%) scale(1)}
       100%{opacity:0;transform:translate(-50%,-90%) scale(.95)}}
     .overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
-      background:rgba(35,26,58,.78);backdrop-filter:blur(6px);pointer-events:auto;text-align:center;padding:20px}
+      background:rgba(243,235,215,.9);backdrop-filter:blur(6px);pointer-events:auto;text-align:center;padding:20px}
     .overlay h1{font-size:clamp(40px,9vw,84px);margin:0 0 6px;font-weight:900;letter-spacing:-.02em}
-    .overlay h1 .mf{color:#7fffcf}
+    .overlay h1 .mf{color:#0052ff}
     .overlay p{margin:.35em 0;font-size:clamp(14px,2.4vw,19px);opacity:.92;line-height:1.5}
     .overlay .keys{opacity:.75;font-size:clamp(12px,2vw,15px)}
     .overlay button{margin-top:22px;pointer-events:auto;font:inherit;font-weight:800;
-      font-size:clamp(18px,3vw,24px);padding:.6em 2.2em;border-radius:999px;border:none;cursor:pointer;
-      background:linear-gradient(135deg,#0052ff,#7fffcf);color:#14102a;box-shadow:0 6px 30px rgba(0,82,255,.45)}
+      font-size:clamp(18px,3vw,24px);padding:.6em 2.2em;border-radius:999px;cursor:pointer;
+      border:3px solid ${PAL.inkCss};background:#0052ff;color:#f3ebd7;
+      box-shadow:3px 4px 0 ${PAL.inkCss}}
+    .overlay button:active{transform:translate(2px,2px);box-shadow:1px 2px 0 ${PAL.inkCss}}
     #touch{position:fixed;inset:0;pointer-events:none;display:none}
     #touch.on{display:block}
     .tbtn{position:absolute;pointer-events:auto;width:70px;height:70px;border-radius:50%;
-      background:rgba(255,243,221,.14);border:2px solid rgba(255,243,221,.35);color:${PAL.cream};
-      font:800 13px ui-rounded,system-ui;display:flex;align-items:center;justify-content:center;
+      background:rgba(243,235,215,.5);border:2px solid rgba(46,41,36,.6);color:${PAL.inkCss};
+      font:800 13px 'Comic Sans MS',ui-rounded,system-ui;display:flex;align-items:center;justify-content:center;
       -webkit-tap-highlight-color:transparent}
-    .tbtn:active{background:rgba(255,243,221,.3)}
+    .tbtn:active{background:rgba(46,41,36,.15)}
     #muteBtn{position:absolute;top:60px;right:18px;pointer-events:auto;background:none;border:none;
       font-size:22px;cursor:pointer;opacity:.8}
   `;
@@ -1000,7 +1095,7 @@ const HUD = (() => {
       const d = document.createElement('div');
       d.className = 'pop';
       d.textContent = `+${total.toLocaleString()}${mult > 1 ? `  (x${mult})` : ''}`;
-      d.style.color = '#a8ffdd';
+      d.style.color = PAL.crayonGreen;
       hud.appendChild(d); setTimeout(() => d.remove(), 1150);
       $('combo').textContent = '';
     },
@@ -1008,7 +1103,7 @@ const HUD = (() => {
       const d = document.createElement('div');
       d.className = 'pop';
       d.textContent = Math.random() < 0.25 ? 'PAPER HANDS' : 'BAILED';
-      d.style.color = '#ff7a7a';
+      d.style.color = PAL.crayonRed;
       hud.appendChild(d); setTimeout(() => d.remove(), 1150);
       $('combo').textContent = '';
     },

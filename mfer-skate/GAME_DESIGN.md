@@ -66,10 +66,14 @@ Collectible per level: a **hardware wallet** (our "hidden VHS tape").
 
 ## Art & audio direction
 
-- **LoFi chill**: dusk palette (peach → dusty purple), long shadows, palm silhouettes,
-  Base-blue accents on coping/rails, low-poly everything.
-- Lo-fi hip-hop soundtrack (~72bpm), vinyl crackle, mellow SFX. The prototype generates its
-  loop procedurally with WebAudio; production would license real lo-fi tracks.
+- **"A sketch of a skatepark come to life"** (locked in from user feedback, v0.2): paper-cream
+  world, wobbly double-stroked ink outlines on all geometry, pencil-hatched ground, doodle sun
+  and scribble clouds, crayon-red graffiti, Base-blue coping/rails as the color accent.
+  The textured 3D mfer is the one "real" thing in the sketch — the drawing that came to life.
+  This is truer to the source than any rendered style: mfers *are* ink doodles.
+- **LoFi chill** pacing and sound: lo-fi hip-hop (~72bpm), vinyl crackle, mellow SFX. The
+  prototype generates its loop procedurally with WebAudio; production would license real tracks.
+- Proportions are cartoon, not realistic: oversized board (~1.5×) to match the mfer's big head.
 
 ## Character / trait system
 
