@@ -1,0 +1,16 @@
+{
+  "name": "mfsk8-prototype",
+  "version": "0.1.0",
+  "description": "mfSk8 - THPS-style mfer skate game prototype (three.js)",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node test/smoke.mjs"
+  },
+  "license": "ISC",
+  "devDependencies": {
+    "esbuild": "^0.28.1",
+    "playwright-core": "^1.61.1",
+    "three": "^0.160.0"
+  },
+  "private": true
+}
