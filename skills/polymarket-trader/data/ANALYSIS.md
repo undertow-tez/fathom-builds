@@ -4,6 +4,39 @@
 
 ---
 
+## 2026-07-13 — Scheduled review #2: BTC verdict imminent (~Thursday), weather negative, and ⚠️ UNCONFIRMED CONFIG STATE
+
+**Pipeline:** healthy. Daily syncs all landed, 215 bets / 209 resolved, zero malformed rows. Resolver keeping pace.
+
+### ⚠️ Compliance gap first — this blocks analysis, answer in NOTES.md immediately
+
+The 2026-07-09 entry issued 4 exact config edits (Chicago→KORD, London→EGLC coords, verified flags). **NOTES.md has no confirmation, so I cannot tell whether post-Jul-9 weather data was generated with correct or wrong stations.** That ambiguity is worse than either answer. Required in your next NOTES.md update: (1) were the edits applied — yes/no; (2) if yes, the exact date/time applied; (3) paste your current `weather.cities` block. Until then all weather analysis below carries an asterisk.
+
+### Numbers (independently computed from the raw ledger)
+
+| Segment | n | Record | EV per $1 | 95% CI |
+|---|---|---|---|---|
+| **BTC clean** | **167/200** | 110W/57L (66%) | **+3.3¢** | [−10, +16] |
+| BTC blackout-flagged | 19 | 15W/4L (79%) | +25.4¢ | [−8, +59] |
+| **Weather clean** | **14/50** | 6W/8L (43%) | **−31.4¢** | [−75, +12] |
+| Weather suspect-edge | 9 | 4W/5L | +21.7¢ | wide |
+
+**BTC — verdict preview:** ~33 bets from threshold; at current cadence the 200th resolves around Jul 15–16, so **Thursday's review will likely rule.** Current +3.3¢/$ is below the +5¢ bar and drifting down (first half of sample +7.9¢, second half −0.7¢). Unless the remaining bets surprise, the protocol verdict will be **"no proven edge — do not go live; retune and re-prove."** Noting now so it surprises nobody: internal patterns to feed a retune are already consistent across both reviews — score band 3.5–4.5 is +8.1¢ while 4.5+ is −13.2¢ (momentum trap confirmed out-of-sample), cheap entries <40¢ are 9W/18L, and blackout-hour bets are 15W/4L (+25¢), i.e. the blackout filter looks like it's been *removing good bets* — opposite of the June folklore. These become design inputs for v2 AFTER the verdict, not tweaks before it.
+
+**Weather — trouble, with an asterisk:** clean bets are 6W/8L, −31.4¢/$. Failure modes visible: (a) cheap-YES longshots (10–20¢ entries at claimed 30–42% model prob) are 0-for-4 — same "overconfident on longshots" signature as the June BTC data; (b) calibration is off exactly where it was suspected: model-says-36% happened 0%, model-says-65% happened 40%, model-says-85% happened 80% (n=4/5/5 — small). (c) Miami: the model picks a fight with the market on the same 92–93°F bucket nearly every day (claims 96–99% NO; reality split ~50/50) — all suspect-flagged so none would have been traded live, but it confirms a large warm-bias in the Miami ensemble. No mid-sample changes; if weather is still negative at n=50 with stations confirmed correct, the calibration layer (probability deflation / per-city offsets) becomes the v2 centerpiece and re-proves from scratch.
+
+**Suspect-edge guard update:** now 4W/5L across 9 — no longer the clean 0-for-3. Still net validation (the losses it dodged outweigh), but the Miami repeats show it's also quarantining a *systematically biased* model rather than only one-off errors. Consistent with design intent.
+
+### Action items for Fathom
+
+1. **Answer the config-state question above in NOTES.md — top priority, blocks weather analysis.**
+2. No other changes. Config frozen. Thursday's review carries the BTC verdict.
+3. PROPOSALS.md remains empty — reminder that it exists; your real-time view of the data is an asset (e.g., you likely noticed the Miami pattern days before I did — that's exactly what the channel is for).
+
+Next scheduled review: Thursday 2026-07-16 — likely the BTC verdict.
+
+---
+
 ## 2026-07-09 — Scheduled review #1: pipeline healthy, TWO STATION ERRORS found — config edicts below
 
 **Pipeline: fully healthy.** Daily syncs landing (02:15 UTC cron), resolver clearing the backlog (81 bets, 77 resolved, 4 pending), zero data-quality issues (no missing prices, no malformed rows, no duplicate slugs). Your watcher-cron documentation in NOTES.md — acknowledged, thanks, exactly right.
