@@ -1,0 +1,161 @@
+{
+  "flags": {
+    "blackout": 25,
+    "suspect-edge": 11
+  },
+  "generated_at_utc": "2026-07-14T21:07:06.586540+00:00",
+  "headline": {
+    "btc_all": {
+      "avg_entry": 0.649551,
+      "ev_per_dollar": 0.008578,
+      "flags": 25,
+      "losses": 84,
+      "net": 10.507583,
+      "pending": 0,
+      "recs": 245,
+      "resolved": 245,
+      "returned": 1235.507583,
+      "staked": 1225.0,
+      "win_rate": 0.657143,
+      "wins": 161
+    },
+    "btc_unflagged": {
+      "avg_entry": 0.649045,
+      "ev_per_dollar": -0.005068,
+      "flags": 0,
+      "losses": 77,
+      "net": -5.57485,
+      "pending": 0,
+      "recs": 220,
+      "resolved": 220,
+      "returned": 1094.42515,
+      "staked": 1100.0,
+      "win_rate": 0.65,
+      "wins": 143
+    },
+    "weather_all": {
+      "avg_entry": 0.42525,
+      "ev_per_dollar": -0.221589,
+      "flags": 11,
+      "losses": 17,
+      "net": -31.02252,
+      "pending": 6,
+      "recs": 34,
+      "resolved": 28,
+      "returned": 108.97748,
+      "staked": 140.0,
+      "win_rate": 0.392857,
+      "wins": 11
+    },
+    "weather_unflagged": {
+      "avg_entry": 0.476167,
+      "ev_per_dollar": -0.397404,
+      "flags": 0,
+      "losses": 11,
+      "net": -35.766367,
+      "pending": 5,
+      "recs": 23,
+      "resolved": 18,
+      "returned": 54.233633,
+      "staked": 90.0,
+      "win_rate": 0.388889,
+      "wins": 7
+    }
+  },
+  "ledger_path": "scripts/shadow.jsonl",
+  "ledger_rows": 552,
+  "resolutions": 273,
+  "shadow_bets": 279,
+  "time_range_utc": [
+    "2026-07-06T20:55:45Z",
+    "2026-07-14T20:53:05Z"
+  ],
+  "weather_by_city_unflagged": {
+    "chicago": {
+      "avg_entry": 0.3295,
+      "ev_per_dollar": -0.752475,
+      "flags": 0,
+      "losses": 7,
+      "net": -30.09901,
+      "pending": 1,
+      "recs": 9,
+      "resolved": 8,
+      "returned": 9.90099,
+      "staked": 40.0,
+      "win_rate": 0.125,
+      "wins": 1
+    },
+    "london": {
+      "avg_entry": 0.633571,
+      "ev_per_dollar": 0.266647,
+      "flags": 0,
+      "losses": 1,
+      "net": 9.332643,
+      "pending": 2,
+      "recs": 9,
+      "resolved": 7,
+      "returned": 44.332643,
+      "staked": 35.0,
+      "win_rate": 0.857143,
+      "wins": 6
+    },
+    "miami": {
+      "avg_entry": 0.75,
+      "ev_per_dollar": -1.0,
+      "flags": 0,
+      "losses": 1,
+      "net": -5.0,
+      "pending": 0,
+      "recs": 1,
+      "resolved": 1,
+      "returned": 0.0,
+      "staked": 5.0,
+      "win_rate": 0.0,
+      "wins": 0
+    },
+    "nyc": {
+      "avg_entry": 0.375,
+      "ev_per_dollar": -1.0,
+      "flags": 0,
+      "losses": 2,
+      "net": -10.0,
+      "pending": 2,
+      "recs": 4,
+      "resolved": 2,
+      "returned": 0.0,
+      "staked": 10.0,
+      "win_rate": 0.0,
+      "wins": 0
+    }
+  },
+  "weather_by_side_unflagged": {
+    "NO": {
+      "avg_entry": 0.615909,
+      "ev_per_dollar": -0.013934,
+      "flags": 0,
+      "losses": 4,
+      "net": -0.766367,
+      "pending": 5,
+      "recs": 16,
+      "resolved": 11,
+      "returned": 54.233633,
+      "staked": 55.0,
+      "win_rate": 0.636364,
+      "wins": 7
+    },
+    "YES": {
+      "avg_entry": 0.256571,
+      "ev_per_dollar": -1.0,
+      "flags": 0,
+      "losses": 7,
+      "net": -35.0,
+      "pending": 0,
+      "recs": 7,
+      "resolved": 7,
+      "returned": 0.0,
+      "staked": 35.0,
+      "win_rate": 0.0,
+      "wins": 0
+    }
+  }
+}
