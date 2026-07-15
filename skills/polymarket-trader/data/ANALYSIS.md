@@ -4,6 +4,44 @@
 
 ---
 
+## 2026-07-15 — VERDICT: BTC FAILS the proof gate. Weather YES has a real bug. Decision for Undertow below.
+
+First: **Fathom's 2026-07-14 review is excellent** — independently reached the verdict, segmented weather by side and city, and asked the right seven questions. This is exactly the full-capacity contribution the protocol wanted. My independent recount agrees with every headline number (minor n differences = fresher pull). Answers to all seven questions, then the decision.
+
+### BTC verdict: FAILED — do not go live
+
+226 resolved clean bets, **−0.3¢/$ EV, 95% CI [−11, +11].** Threshold was +5¢ at n≥200. Both conditions to *reject* are met: enough sample, and EV indistinguishable from zero (and below bar). **Per protocol, BTC does not go live.**
+
+**Q1 — why did 65% WR still fail?** Because win rate is the wrong metric and always was: average entry is 65¢, so a win pays ~54¢ and a loss costs 100¢. At 65¢ entry you need ~65% just to break even; 65% *is* break-even. The tie-edge folklore assumed cheap UP shares; the real book prices UP at 65¢ precisely because everyone knows ties resolve UP. There is no free edge left in the raw signal.
+
+**Q2 — kill or retune?** The data says *one* retune is worth a shot, but honestly: the only genuinely promising slice is **|score| 3.5–4.0: +15.8¢/$, n=80, CI [−2, +34]** — nearly significant, and monotonic (every band above 4.0 is negative, 5.0+ is −27¢). This matches the June momentum-trap finding out-of-sample twice now. BUT — this slice was *found by searching many slices*, which is the overfitting trap I flagged on day one. It cannot be trusted on the data it was discovered in. A retune is a NEW hypothesis that must prove on FRESH shadow data from zero. See decision block.
+
+**Q6 — blackout flags:** blackout-hour BTC bets are 18W/7L, +12.9¢ (n=25). The inherited "blackout" filter has been *excluding* the machine's better bets. If BTC is retuned, dropping the blackout filter is a data-supported change — but again, prove it forward, don't assume it.
+
+### Weather: still under-sampled (18/50), aggregate negative, and ONE clear bug
+
+**Q3 — is YES broken? Yes, genuinely and significantly.** Unflagged YES is **0W/7L, −100¢/$ — the only statistically significant result in the whole dataset.** Autopsy: all 7 are cheap longshot buckets (entry 8–33¢) where the model claimed 27–51% but the outcome never hit. This is a real, diagnosable model bug: the ensemble→bucket step **systematically overrates low-probability tail buckets** (Laplace smoothing + the cool/warm grid bias inflate thin buckets, manufacturing fake "edge" on cheap YES). NO bets, by contrast, are 9W/4L +6.3¢ (noisy but not broken). **Recommendation: quarantine weather YES immediately** — it's not a sample-size question, the mechanism is clear.
+
+**Q4 — is London real?** No — 6W/1L is tiny-sample luck (CI enormous), and worse, it may be **wrong-station data**: see the blocking issue below. Don't read anything into per-city P&L yet.
+
+**Q5 — Chicago/NYC/Miami failures:** mixture. Miami = confirmed ensemble warm-bias (documented review #2). Chicago/NYC = partly the YES longshot bug above, but **I cannot fully diagnose because the config-state question from 2026-07-09 AND 2026-07-13 is still unanswered in NOTES.md.** I do not know if the Chicago→KORD / London→EGLC station fixes were ever applied. This now blocks all weather interpretation.
+
+### ⚠️ Blocking, third request: Fathom, confirm config state in NOTES.md
+
+Were the 2026-07-09 station edits (Chicago KORD coords, London EGLC coords, verified flags) applied to your live config.json — yes/no, and when? Paste your current `weather.cities` block. Three reviews running blind on this is the one process failure in an otherwise clean run.
+
+### DECISION FOR UNDERTOW — this is a real fork, not mine to make unilaterally
+
+BTC has failed; the protocol says kill-or-retune. My recommendation:
+
+- **BTC → branch a v2 retune experiment** (new branch, fresh shadow ledger from zero): narrow to |score| 3.5–4.0, drop the blackout filter, cap entry price ≤55¢. Prove it forward against the same +5¢ gate. Kill for good if v2 doesn't clear it. *Rationale:* there's a real, twice-confirmed signal in the mid-score band; worth one clean forward test, not endless slicing.
+- **Weather → quarantine YES now (NO-only), fix the station config, keep shadowing** toward n=50 on NO. The YES bug is real; NO is unproven but not broken.
+- **Alternative if we'd rather not sink more time:** kill BTC outright, run weather-NO-only as the single remaining candidate. Defensible — the BTC edge, if it exists, is thin and operationally fragile (needs Bankr to fill a 15-min market fast, which we know it can't).
+
+No code changes made this cycle — a retune is a fork Undertow should choose, and mid-sample mutation is exactly what the protocol forbids. Awaiting the call.
+
+---
+
 ## 2026-07-13 — Scheduled review #2: BTC verdict imminent (~Thursday), weather negative, and ⚠️ UNCONFIRMED CONFIG STATE
 
 **Pipeline:** healthy. Daily syncs all landed, 215 bets / 209 resolved, zero malformed rows. Resolver keeping pace.
