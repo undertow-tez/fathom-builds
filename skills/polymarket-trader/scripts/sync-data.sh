@@ -18,7 +18,11 @@ BRANCH="${DATA_BRANCH:-claude/polymarket-trading-skill-qyavzy}"
 mkdir -p "$SKILL_DIR/data"
 cp "$DIR/shadow.jsonl" "$SKILL_DIR/data/shadow.jsonl" 2>/dev/null || true
 cp "$DIR/bets.jsonl" "$SKILL_DIR/data/bets.jsonl" 2>/dev/null || true
+cp "$DIR/shadow-btc-v2.jsonl" "$SKILL_DIR/data/shadow-btc-v2.jsonl" 2>/dev/null || true
+cp "$DIR/shadow-weather-v2.jsonl" "$SKILL_DIR/data/shadow-weather-v2.jsonl" 2>/dev/null || true
 node "$DIR/shadow-score.js" > "$SKILL_DIR/data/shadow-report.txt" 2>&1 || true
+node "$DIR/shadow-score.js" --file "$DIR/shadow-btc-v2.jsonl" > "$SKILL_DIR/data/shadow-btc-v2-report.txt" 2>&1 || true
+node "$DIR/shadow-score.js" --file "$DIR/shadow-weather-v2.jsonl" > "$SKILL_DIR/data/shadow-weather-v2-report.txt" 2>&1 || true
 node "$DIR/pnl.js" > "$SKILL_DIR/data/pnl-report.txt" 2>&1 || true
 
 cd "$REPO_ROOT"
