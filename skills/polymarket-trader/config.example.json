@@ -17,6 +17,14 @@
     ],
     "cooldownMinutes": 30
   },
+  "btcV2": {
+    "_comment": "Retune experiment (2026-07-15). Hypothesis from the failed baseline: edge lives in the MID score band at cheap entries, and the inherited blackout filter was removing good bets. Must prove FORWARD from zero — do not judge on the data that suggested it.",
+    "minScore": 3,
+    "maxScore": 4,
+    "maxEntryPrice": 0.55,
+    "blackoutHoursET": []
+  },
+
   "proving": {
     "btcMinResolvedBets": 200,
     "weatherMinResolvedBets": 50,

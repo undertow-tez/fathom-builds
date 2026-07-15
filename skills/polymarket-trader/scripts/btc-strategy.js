@@ -29,7 +29,10 @@ function argVal(name, dflt) {
 const CONFIG_PATH = argVal('--config', path.join(__dirname, '..', 'config.json'));
 let config = {};
 try { config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')); } catch {}
-const btcCfg = config.btc || {};
+// --profile selects an alternate config block (e.g. btcV2) merged over config.btc.
+// Default (no flag) reads config.btc exactly as before — baseline behavior unchanged.
+const PROFILE = argVal('--profile', null);
+const btcCfg = { ...(config.btc || {}), ...(PROFILE ? (config[PROFILE] || {}) : {}) };
 
 const ASSET = (argVal('--asset', (btcCfg.assets || ['btc'])[0]) || 'btc').toLowerCase();
 const TIMEFRAME = argVal('--timeframe', btcCfg.timeframe || '15m');
@@ -37,6 +40,7 @@ const TF_MINUTES = TIMEFRAME === '5m' ? 5 : 15;
 const MIN_SCORE = btcCfg.minScore ?? 3;
 const MAX_SCORE = btcCfg.maxScore ?? null;
 const UP_ONLY = btcCfg.upOnly ?? false;
+const MAX_ENTRY_PRICE = btcCfg.maxEntryPrice ?? null; // v2: skip expensive favorites
 
 const SYMBOLS = { btc: 'BTCUSDT', eth: 'ETHUSDT', sol: 'SOLUSDT', xrp: 'XRPUSDT' };
 
@@ -182,7 +186,9 @@ async function findMarket() {
         const endDate = m.endDate ? new Date(m.endDate) : null;
         // Need >2 min left — Bankr is too slow for the final stretch
         if (!endDate || endDate.getTime() - Date.now() > 2 * 60 * 1000) {
-          return { slug, question: m.question || m.title || slug, endDate: m.endDate };
+          let prices = [];
+          try { prices = JSON.parse(m.outcomePrices || '[]').map(Number); } catch {}
+          return { slug, question: m.question || m.title || slug, endDate: m.endDate, prices };
         }
       }
     } catch { /* try next */ }
@@ -208,14 +214,27 @@ async function main() {
       a.reasons.push('no active market window');
     } else {
       console.log(`📋 Market: ${market.question} (${market.slug})`);
+      // v2 entry-price cap: don't pay up for favorites (>60c bucket was ~flat)
+      if (MAX_ENTRY_PRICE !== null && market.prices && market.prices.length) {
+        const idx = a.decision === 'BET_UP' ? 0 : 1;
+        const entry = market.prices[idx];
+        if (entry != null && entry > MAX_ENTRY_PRICE) {
+          console.log(`💸 Entry ${(entry * 100).toFixed(0)}¢ > cap ${(MAX_ENTRY_PRICE * 100).toFixed(0)}¢ — NO_BET (v2 price filter)`);
+          a.decision = 'NO_BET';
+          a.reasons.push(`entry ${(entry * 100).toFixed(0)}¢ over maxEntryPrice`);
+          market = null;
+        }
+      }
     }
   }
 
+  const entryIdx = a.decision === 'BET_UP' ? 0 : 1;
   console.log(`\n__SIGNAL__:${JSON.stringify({
     decision: a.decision, score: a.score, price: a.price,
     rsi: a.rsi, vol: a.vol, hourly: a.hourlyChange,
     slug: market?.slug || null, question: market?.question || null,
-    asset: ASSET, timeframe: TIMEFRAME,
+    entryPrice: market?.prices?.[entryIdx] ?? null,
+    asset: ASSET, timeframe: TIMEFRAME, profile: PROFILE,
   })}`);
 }
 

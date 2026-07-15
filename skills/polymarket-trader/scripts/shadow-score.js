@@ -20,7 +20,11 @@
 const fs = require('fs');
 const path = require('path');
 
-const SHADOW_FILE = path.join(__dirname, 'shadow.jsonl');
+function argValLocal(name, dflt) {
+  const i = process.argv.indexOf(name);
+  return i >= 0 ? process.argv[i + 1] : dflt;
+}
+const SHADOW_FILE = path.resolve(argValLocal('--file', path.join(__dirname, 'shadow.jsonl')));
 const CONFIG_PATH = path.join(__dirname, '..', 'config.json');
 
 let config = {};
@@ -28,6 +32,7 @@ try { config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')); } catch {}
 const proving = config.proving || {};
 const THRESHOLDS = {
   btc: { minResolved: proving.btcMinResolvedBets ?? 200, minEv: proving.minEvPerDollar ?? 0.05 },
+  btc_v2: { minResolved: proving.btcMinResolvedBets ?? 200, minEv: proving.minEvPerDollar ?? 0.05 },
   weather: { minResolved: proving.weatherMinResolvedBets ?? 50, minEv: proving.minEvPerDollar ?? 0.05 },
 };
 

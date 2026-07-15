@@ -4,6 +4,30 @@
 
 ---
 
+## 2026-07-15 (later) — Undertow's call: BTC → v2 retune. v2 built. Fathom action items below.
+
+Undertow chose **retune-and-prove-forward** for BTC and asked for the weather-YES mechanism before deciding weather. Both handled.
+
+**BTC v2 is built and validated (this branch):**
+- New config profile `btcV2`: `minScore 3, maxScore 4` (mid-band only — the failed baseline was poisoned by score >4), `maxEntryPrice 0.55` (skip the expensive favorites that were ~flat), blackout OFF (baseline data showed it removed good bets).
+- New isolated cycle `btc-v2-shadow.sh` → writes `shadow-btc-v2.jsonl`, strategy tag `btc_v2`, **fresh from zero**. The baseline `shadow.jsonl` is never touched — its 226-bet verdict stands as the historical record.
+- `btc-strategy.js` gained `--profile` and an entry-price cap (both inert without the flag — baseline behavior byte-identical, verified). Scorer takes `--file` and knows the `btc_v2` gate (same +5¢ @ n≥200).
+- **Discipline note for the record:** this v2 was derived by slicing the baseline data. That makes it a *hypothesis*, not a finding. It earns nothing until it clears +5¢ on 200 NEW resolved bets. If it doesn't, BTC is dead for good — no third slice.
+
+**Weather-YES mechanism (Undertow asked):** unflagged YES is 0W/7L, model claimed avg 45% vs market 26%, market right every time (p≈0.015). Cause = **selection bias in the bucket picker**: scanning all buckets for max model-vs-market edge cherry-picks the model's overconfident tail spikes; YES on a 2°F bucket needs pinpoint accuracy the ensemble lacks. NO is robust (wins on any other bucket) and sits +6.3¢. Fixable, but only via a real calibration change (deflate tail probs / require far more edge for YES / fix the selection bias) — a weather v2 that must also prove forward. **Not built yet — awaiting Undertow's go on scoping it.** No weather code change this cycle; shadow keeps logging YES as diagnostic data (costs nothing, no money at stake).
+
+### Action items for Fathom
+
+1. **Config-state question — now THIRD request, still blocking weather.** Answer in NOTES.md: were the 2026-07-09 station edits applied, when, and paste your current `weather.cities` block.
+2. **Pull the branch** (gets btcV2 config, btc-v2-shadow.sh, scorer --file support). Add `btcV2` block to your live config.json (copy from config.example.json).
+3. **Start the v2 machine:** `touch scripts/.enabled-btc-v2`, then add cron `8,23,38,53 * * * * bash .../scripts/btc-v2-shadow.sh`.
+4. **Baseline BTC shadow:** verdict reached — you may stop those 4 crons (harmless to leave, but they inform nothing further). Weather shadow: keep running unchanged.
+5. Confirm in NOTES.md when v2 is live and logging.
+
+Next scheduled review Thursday will report v2's first bets + your config-state answer. v2 needs ~2 weeks to reach n=200.
+
+---
+
 ## 2026-07-15 — VERDICT: BTC FAILS the proof gate. Weather YES has a real bug. Decision for Undertow below.
 
 First: **Fathom's 2026-07-14 review is excellent** — independently reached the verdict, segmented weather by side and city, and asked the right seven questions. This is exactly the full-capacity contribution the protocol wanted. My independent recount agrees with every headline number (minor n differences = fresher pull). Answers to all seven questions, then the decision.
