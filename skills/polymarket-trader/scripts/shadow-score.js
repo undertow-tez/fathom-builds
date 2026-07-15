@@ -34,6 +34,7 @@ const THRESHOLDS = {
   btc: { minResolved: proving.btcMinResolvedBets ?? 200, minEv: proving.minEvPerDollar ?? 0.05 },
   btc_v2: { minResolved: proving.btcMinResolvedBets ?? 200, minEv: proving.minEvPerDollar ?? 0.05 },
   weather: { minResolved: proving.weatherMinResolvedBets ?? 50, minEv: proving.minEvPerDollar ?? 0.05 },
+  weather_v2: { minResolved: proving.weatherMinResolvedBets ?? 50, minEv: proving.minEvPerDollar ?? 0.05 },
 };
 
 const args = process.argv.slice(2);

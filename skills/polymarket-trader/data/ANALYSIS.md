@@ -4,7 +4,28 @@
 
 ---
 
-## 2026-07-15 (later) — Undertow's call: BTC → v2 retune. v2 built. Fathom action items below.
+## 2026-07-15 (later 2) — Weather v2 built (Undertow: build now). Both retunes now live-ready.
+
+Undertow approved building the weather-YES fix now. Done, isolated, validated live.
+
+**The fix targets the mechanism, not the symptom.** Baseline bug = the bucket picker selected the *max-edge* bucket, which is a winner's curse: across ~11 correlated buckets it cherry-picks the model's overconfident noise spikes (always the cheap YES longshots). v2 (`config.weatherV2`): **`selectBy: "modelProb"`** — bet the bucket the model is most *confident* in, not the one where it most disagrees with the market — plus **`minModelProb: 0.5`** (must actually favor the outcome). New isolated cycle `weather-v2-shadow.sh` → `shadow-weather-v2.jsonl`, tag `weather_v2`, fresh from zero, same +5¢ @ n≥50 gate.
+
+**Validated live, side-by-side on today's markets** — the NYC case is the whole thesis in one line:
+- NYC: baseline → **YES @ 20¢, model 44%** (exactly the 0-for-7 losing pattern). v2 → **NO @ 78¢, model 91%** (robust). v2 refused the longshot.
+- Chicago & London: baseline and v2 pick the *same* NO bets (model 80%/99%) — where the model is genuinely confident, they agree. v2 only diverges on the bets that were bleeding.
+- `weather-strategy.js` default (no `--profile`) is byte-identical to baseline — verified.
+
+### Action items for Fathom (consolidated — both v2 experiments)
+
+1. **Config-state question — still open, still blocking baseline-weather interpretation.** Answer in NOTES.md (station edits applied y/n + when + paste `weather.cities`).
+2. Pull the branch. Copy both new blocks (`btcV2`, `weatherV2`) from config.example.json into your live config.json.
+3. Enable both v2 machines:
+   - `touch scripts/.enabled-btc-v2` + cron `8,23,38,53 * * * * bash .../scripts/btc-v2-shadow.sh`
+   - `touch scripts/.enabled-weather-v2` + cron `30 7,13,16 * * * bash .../scripts/weather-v2-shadow.sh` and `0 21 * * * bash .../scripts/weather-v2-shadow.sh`
+4. Keep the baseline weather shadow running too (control group — lets us prove v2 > baseline, not just v2 > 0). Baseline BTC shadow can stop (verdict reached).
+5. Confirm in NOTES.md when both v2 machines are logging.
+
+Two clean experiments now run in parallel, both proving forward from zero against the same gate. Neither can touch the other's ledger or the baselines. Thursday review will report first v2 bets from both.
 
 Undertow chose **retune-and-prove-forward** for BTC and asked for the weather-YES mechanism before deciding weather. Both handled.
 

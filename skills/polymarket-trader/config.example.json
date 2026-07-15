@@ -17,6 +17,13 @@
     ],
     "cooldownMinutes": 30
   },
+  "weatherV2": {
+    "_comment": "Retune experiment (2026-07-15). Baseline weather-YES was 0W/7L: the max-EDGE bucket picker cherry-picked the model's overconfident cheap tail buckets (winner's curse). v2 fixes the mechanism: select by model confidence, not by disagreement with the market, and require the model to actually favor the outcome. Prove FORWARD from zero.",
+    "selectBy": "modelProb",
+    "minModelProb": 0.5,
+    "minEdge": 0.12
+  },
+
   "btcV2": {
     "_comment": "Retune experiment (2026-07-15). Hypothesis from the failed baseline: edge lives in the MID score band at cheap entries, and the inherited blackout filter was removing good bets. Must prove FORWARD from zero — do not judge on the data that suggested it.",
     "minScore": 3,

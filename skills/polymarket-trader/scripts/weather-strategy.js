@@ -44,7 +44,10 @@ try { config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')); } catch {
   console.error(`❌ Cannot read config at ${CONFIG_PATH} — copy config.example.json to config.json first`);
   process.exit(1);
 }
-const W = config.weather || {};
+// --profile merges an alternate block (e.g. weatherV2) over config.weather.
+// cities live only in config.weather, so the spread preserves them.
+const PROFILE = argVal('--profile', null);
+const W = { ...(config.weather || {}), ...(PROFILE ? (config[PROFILE] || {}) : {}) };
 const CITIES = W.cities || {};
 const MIN_EDGE = W.minEdge ?? 0.12;
 // Edges beyond this are almost always OUR mistake (wrong station, stale quote,
@@ -54,6 +57,12 @@ const MAX_PRICE = W.maxPrice ?? 0.85;
 const MIN_MODEL_PROB = W.minModelProb ?? 0.25;
 const SIDES = W.sides || ['YES', 'NO'];
 const BET_SIZE = W.betSize ?? 10;
+// v2 fix for the YES selection-bias bug: pick the bucket the MODEL is most
+// confident in ('modelProb'), not the one where model most disagrees with the
+// market ('edge'). Max-edge selection is a winner's curse — it cherry-picks the
+// model's overconfident noise spikes in cheap tail buckets. Default stays 'edge'
+// so the baseline weather strategy is byte-identical without the flag.
+const SELECT_BY = W.selectBy ?? 'edge';
 const MAX_DAYS_AHEAD = W.maxDaysAhead ?? 1;
 const MIN_MEMBERS = W.minEnsembleMembers ?? 15;
 const MAX_PER_CITY = W.maxBetsPerCityPerDay ?? 1;
@@ -263,7 +272,8 @@ async function main() {
           if (edge < MIN_EDGE) continue;
           if (price <= 0.03 || price > MAX_PRICE) continue;   // avoid dust and near-certainties
           if (winProb < MIN_MODEL_PROB) continue;
-          if (!best || edge > best.edge) {
+          const selVal = SELECT_BY === 'modelProb' ? winProb : edge;
+          if (!best || selVal > best._selVal) {
             best = {
               city: cityKey, date: target.iso,
               slug: x.m.slug, question: x.m.question,
@@ -271,12 +281,14 @@ async function main() {
               price: +price.toFixed(3), modelProb: +winProb.toFixed(3), edge: +edge.toFixed(3),
               amount: BET_SIZE,
               suspect: edge > MAX_EDGE,
+              _selVal: selVal,
             };
           }
         }
       });
 
       if (best && budgetLeft > 0) {
+        delete best._selVal; // internal selection key — not part of the record
         recommendations.push(best);
         budgetLeft--;
         if (best.suspect) {
