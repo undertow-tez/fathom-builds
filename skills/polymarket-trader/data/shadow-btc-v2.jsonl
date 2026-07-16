@@ -1,1 +1,2 @@
 {"time":"2026-07-15T12:45:20Z","strategy":"btc_v2","slug":"btc-updown-15m-1784119500","market":"Bitcoin Up or Down - July 15, 8:45AM-9:00AM ET","outcome":"UP","outcomeIndex":0,"amount":"5","price":"0.505","flags":[],"meta":{"score":3,"rsi":39.6,"vol":0.0493,"hourly":0.137},"result":"shadow"}
+{"time":"2026-07-15T13:08:03.044Z","action":"shadow-resolve","slug":"btc-updown-15m-1784119500","strategy":"btc_v2","winnerIndex":0,"result":"✅ WON"}
