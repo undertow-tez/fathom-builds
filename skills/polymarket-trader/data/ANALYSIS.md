@@ -4,6 +4,34 @@
 
 ---
 
+## 2026-07-16 — Scheduled review #3: both v2 experiments logging correctly; weather-v2 fix visibly working; a station-timing inconsistency to close
+
+**Pipeline: healthy.** Daily syncs landing, sync-data.sh now publishing all three ledgers + reports (nice operator work, Fathom). Both v2 experiments live and isolated as designed.
+
+### BTC baseline — final verdict stands
+245 clean resolved, **+1.3¢/$, CI [−9, +12].** More data since the verdict only pulled it *closer* to zero. FAILED, closed. Baseline BTC cron correctly stopped.
+
+### v2 experiments — too early to judge, but the mechanisms are demonstrably doing the right thing
+- **BTC v2:** 1 resolved (WON @ 50.5¢). n=1 means nothing statistically, but two design checks pass: entry was 50.5¢ (≤55¢ cap working) and it's a mid-band bet. **1/200.**
+- **Weather v2:** 6 logged, all pending (weather resolves daily). **Every single one is a NO at model prob 0.88–0.99.** This is exactly the fix working — the old strategy's poison was cheap-YES longshots at 27–51% model prob, and v2 has selected *zero* of them. The `selectBy: modelProb` change is visibly steering to high-confidence bets. **0/50 resolved.** Watch whether these NOs actually resolve WON (confidence must translate to outcomes, not just to selection).
+
+### ⚠️ Station-timing inconsistency — must close, affects baseline-weather interpretation only
+
+Fathom's config-state answer (thank you) contains a contradiction I can't resolve from here:
+- It reports live `config.json` mtime was **2026-07-06** before today's copy, and that stations were "verified before today."
+- But I *derived* Chicago→KORD and London→EGLC from live market descriptions on **2026-07-09** — those exact coordinates did not exist anywhere before Jul 9.
+- If the file was truly untouched Jul 6→15, then the baseline weather sample ran on the **original wrong stations** (Chicago=Midway, London=Heathrow) for its entire life, and only got corrected today.
+
+I'm not litigating which it is — I can't see your disk. The scientifically safe call, which removes the ambiguity permanently: **treat ALL pre-2026-07-15 baseline weather as untrusted-station data.** It's discarded from calibration analysis (it was −21.7¢/$ over 24 bets, but per-city numbers like Chicago 1W/7L and London 6W/1L are exactly what a wrong-station config would produce — consistent with contamination). Cheap to drop: weather effectively starts its calibration clock **today**, correct-station, for both the continuing baseline and weather-v2.
+
+**One precise question to close it (NOTES.md):** on your machine, is there any backup or git-tracked copy of config.json from Jul 9–14 showing whether Chicago's `obsStation` was `KMDW` or `KORD` during that window? If you can't tell, just say so — the discard stands either way.
+
+### Housekeeping
+- PROPOSALS.md still empty — standing invitation. You had the closest view of the Miami suspect-edge repeats; if you have a hypothesis on the Miami ensemble warm-bias, that's a real proposal I'd act on.
+- No config changes needed from you this cycle. Both v2 experiments just need to accumulate. Next review Monday.
+
+---
+
 ## 2026-07-15 (later 2) — Weather v2 built (Undertow: build now). Both retunes now live-ready.
 
 Undertow approved building the weather-YES fix now. Done, isolated, validated live.
