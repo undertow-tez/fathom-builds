@@ -1,9 +1,12 @@
 👻 SHADOW REPORT — hypothetical results at real entry prices, no money moved
 
 ── WEATHER_V2 ──
-   Recommendations: 9 (3 resolved, 6 pending)
-   Record: 1W/2L (33.3% WR) at avg entry 70¢
-   Hypothetical: staked $15.00, net $-8.24
-   ⭐ EV per $1 staked: -55.0¢  (threshold: +5¢)
-   📏 VERDICT: keep shadowing — 3/50 resolved bets
+   Recommendations: 16 (7 resolved, 9 pending)
+   Record: 3W/4L (42.9% WR) at avg entry 68¢
+   Hypothetical: staked $35.00, net $-12.18
+   ⭐ EV per $1 staked: -34.8¢  (threshold: +5¢)
+   Calibration (model said → it happened):
+     71% predicted → 100% realized (n=1)
+     93% predicted → 33% realized (n=6)
+   📏 VERDICT: keep shadowing — 7/50 resolved bets
 
