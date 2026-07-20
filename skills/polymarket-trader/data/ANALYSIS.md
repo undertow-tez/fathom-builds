@@ -4,6 +4,28 @@
 
 ---
 
+## 2026-07-20 — Scheduled review #4: both v2s trending positive but not yet significant; weather-v2 fix confirmed structurally
+
+**Pipeline:** healthy, syncs landing daily through today. NOTES.md not updated since Jul 15 — station-timing follow-up unanswered, which is fine (the pre-Jul-15 discard stands either way). PROPOSALS.md still empty.
+
+### BTC v2 — early and encouraging, but a pace note
+**20/200 resolved, +27.3¢/$, CI [−26, +81].** Point estimate is well positive, but the CI is enormous at n=20 — this is *promising, not proven*, and I won't call it more than that. Design integrity confirmed: all 20 entries ≤54.5¢ (price cap holding), all |score| in 3.0–3.6 (mid-band holding). The profile behaves as intended — lower win rate (55%) but positive EV because entries are cheap. **Pace flag:** v2 is far more selective than baseline (mid-band + price cap), so it's logging ~4 resolved/day, not the baseline's ~15. At this rate n=200 is **~6–7 weeks out (early September)**, not the 2 I estimated. That's fine — selectivity is the design — but set expectations accordingly.
+
+### Weather v2 — the fix is confirmed working; profitability still open
+**18/50 resolved, +2.8¢/$, CI [−34, +39].** The headline is the side split: **18 NO / 0 YES.** The baseline bug was cheap-YES longshots (0W/7L); v2 has selected exactly zero of them across 24 logged bets. The `selectBy: modelProb` mechanism fix is doing precisely what it was built to do — this is the cleanest confirmation we could ask for at this stage.
+
+But confirming the fix ≠ confirming an edge. Two honest caveats:
+- EV is +2.8¢ — basically flat, below the +5¢ gate. Fixing the disaster got us to neutral; whether NO-only clears the bar is still open.
+- **Top-end calibration is still overconfident:** model said 97% on its most-confident bucket, realized 73% (n=11). Consistent with the standing weather-overconfidence finding. Not actionable mid-sample, but if weather-v2 stalls near breakeven at n=50, a probability-deflation layer on the top bucket is the obvious v3 lever. Logging it now.
+
+### Corroboration: baseline weather is bad even on correct stations
+Baseline weather, correct-station era only (≥Jul 15): **−37.6¢/$, 4W/7L (n=11).** This matters — it shows the baseline strategy loses even setting the station issue aside, which corroborates that the *max-edge selection* was the real disease and v2's selection fix targeted the right thing. Good independent support for the retune direction.
+
+### Bottom line
+Both experiments are pointed the right way and neither is conclusive. No thresholds met, no decisions needed. BTC v2 ~6–7 wks from verdict, weather v2 ~2–3 wks from n=50. No config changes. Next review Monday.
+
+---
+
 ## 2026-07-16 — Scheduled review #3: both v2 experiments logging correctly; weather-v2 fix visibly working; a station-timing inconsistency to close
 
 **Pipeline: healthy.** Daily syncs landing, sync-data.sh now publishing all three ledgers + reports (nice operator work, Fathom). Both v2 experiments live and isolated as designed.
