@@ -4,6 +4,37 @@
 
 ---
 
+## 2026-07-23 — Scheduled review #5: BTC v2 "significant" at n=41 — and this is EXACTLY the trap the 200-gate exists to defeat
+
+**Pipeline:** healthy, syncs daily. NOTES.md untouched since Jul 15, PROPOSALS.md still empty.
+
+### BTC v2 — positive, significant-looking, and I am deliberately not excited
+**41/200 resolved, +63.9¢/$, 95% CI [+19, +109] — lower bound above zero.** Taken naively that's "significant." I'm flagging hard why we ignore it anyway:
+
+1. **It's 41/200.** The gate is 200 *specifically because* strategies look significant in small favorable windows and then regress. Early significance is the siren, not the destination. The gate does not move.
+2. **A +64¢/$ edge on a liquid 15-min BTC market is not real.** Nobody leaves that lying around. An implausibly large effect is *evidence of a small-sample/regime artifact*, not evidence of genius — same prior that powers our suspect-edge guard.
+3. **It's regime-untested.** All 41 bets are UP (0 DOWN — the mid-band + strict DOWN gate produces an UP-only strategy). BTC over the sample window went **+2.1%, choppy-but-drifting-up** (63,786→65,099). So we've tested an UP-momentum strategy almost entirely in a non-falling market. It has never seen a sustained downtrend, which is exactly where UP-momentum bets get slaughtered. The +64¢ is a regime reading, not an edge.
+4. **Second-half driven** (first 20: +27¢ CI crosses 0; last 21: +99¢) — consistent with a hot streak, not a stable process.
+
+Design integrity still holds (all entries ≤54.5¢, scores in-band). **Verdict: encouraging, no action, gate unchanged.** It must reach n=200 *and* survive a real BTC down-week before it means anything. If anything the implausible size raises my skepticism. Pace ~6 wks to n=200.
+
+### Weather v2 — the fix works, but it's heading for a breakeven FAIL, and I can already name why
+**35/50 resolved, +1.1¢/$, CI [−25, +27].** Still **38 NO / 0 YES** — the selection fix is rock-solid. But the edge is flat, and the calibration table shows the reason clearly:
+
+| model said | actually won | n |
+|---|---|---|
+| 74% | 86% | 7 |
+| 86% | 50% | 10 |
+| 92% | 67% | 6 |
+| 99% | 67% | 12 |
+
+**The model is overconfident across the whole NO book, not just on YES** — worst at the top (says 99%, delivers 67%). NO-only survived because betting-against is structurally robust, but the overconfidence caps the achievable edge at ~breakeven. v2 fixed the *selection* disease; the *calibration* disease is still live. **Prediction for the record: weather v2 likely fails the +5¢ gate at n=50** (~2 wks out). If it does, the fix is a v3 probability-calibration layer (deflate model probs toward realized frequency, steepest at the top bucket) — a real, buildable change, but I will NOT build it mid-sample. We let n=50 render its verdict first.
+
+### Bottom line
+No gate met, no decision needed, config frozen. The useful headline for Undertow: **BTC v2 looks great and that is precisely why we're not touching it** — this is the discipline working as designed, not a reason to move early. Next review Monday.
+
+---
+
 ## 2026-07-20 — Scheduled review #4: both v2s trending positive but not yet significant; weather-v2 fix confirmed structurally
 
 **Pipeline:** healthy, syncs landing daily through today. NOTES.md not updated since Jul 15 — station-timing follow-up unanswered, which is fine (the pre-Jul-15 discard stands either way). PROPOSALS.md still empty.
