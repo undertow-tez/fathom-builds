@@ -8,12 +8,25 @@
   "betSize": 5,
   "budget": null,
   "budgetDurationHours": null,
-  "minScore": 2,
-  "maxScore": null,
+  "minScore": 3,
+  "maxScore": 5,
   "upOnly": false,
-  "blackoutHours": [],
+  "blackoutHours": [11, 12, 13],
   "drawdownLimit": 15,
   "cooldownMinutes": 30,
   "signalFeed": "bets",
-  "broadcastSignals": true
+  "broadcastSignals": true,
+
+  "v2": {
+    "mode": "shadow",
+    "minEdge": 0.04,
+    "kellyFraction": 0.25,
+    "maxBetFraction": 0.02,
+    "bankroll": 100,
+    "tieBias": 0.02,
+    "volLookback": 30,
+    "maxPrice": 0.97,
+    "minMinutesLeft": 1.5,
+    "maxMinutesLeft": 14
+  }
 }

@@ -5,7 +5,43 @@ description: Automated crypto Up/Down Polymarket betting strategy. Supports BTC,
 
 # Crypto Up/Down Trader (Multi-Asset)
 
-Fully autonomous momentum strategy for Polymarket's "Up or Down" markets. Runs as an independent machine you turn on and off — separate from heartbeats or other agent activity. Supports multiple assets and timeframes.
+Fully autonomous strategy for Polymarket's "Up or Down" markets. Runs as an independent machine you turn on and off — separate from heartbeats or other agent activity. Supports multiple assets and timeframes.
+
+> ## ⚡ v2: Probability + EV Engine (recommended)
+>
+> There are now **two engines** in this skill:
+>
+> - **v1 (`strategy.js`, momentum scoring)** — the original technical-analysis
+>   scorer. It never checks the price it pays and bets on win-rate, not EV.
+>   Kept for reference, but **not recommended for making money**.
+> - **v2 (`strategy-v2.js`, probability/EV)** — estimates `P(up)` from where
+>   spot sits vs the window strike and time left, compares it to the market
+>   price, and bets **only on positive expected value**, sized by Kelly.
+>
+> **v2 starts in `shadow` mode** (paper trading): it evaluates and logs every
+> window to `windows.jsonl` but places no real bets, so you can prove the edge
+> exists before risking capital. Flip to `live` only after the backtest shows
+> tight calibration and positive paper ROI.
+>
+> ```bash
+> # run one shadow evaluation
+> node scripts/strategy-v2.js --asset btc --tf 15m
+>
+> # after windows close, settle + review
+> node scripts/resolve-windows.js
+> node scripts/backtest.js --all
+>
+> # unit tests for the model core
+> node scripts/test/model.test.js
+> ```
+>
+> Full design, math, and the shadow→live go-live criteria:
+> **[references/strategy-v2.md](references/strategy-v2.md)**
+>
+> The v2 machine cron calls `cycle-v2.sh` (instead of `cycle.sh`); everything
+> else — `.enabled` flag, `machine.sh` start/stop, config.json — is shared.
+
+Below documents the **v1** momentum engine and the shared machine plumbing.
 
 ## Supported Markets
 

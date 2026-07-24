@@ -12,6 +12,17 @@ ENV/
 # Six Sigma project data (user-generated)
 six-sigma-projects/
 
+# Trader runtime data (user-generated, per-deployment)
+config.json
+**/windows.jsonl
+**/bets.jsonl
+**/skips.jsonl
+**/trade-log.json
+**/.enabled
+**/.cooldown
+**/.lock_*
+**/price-feed/candles-*.json
+
 # OS
 .DS_Store
 Thumbs.db
