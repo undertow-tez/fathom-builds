@@ -4,6 +4,27 @@
 
 ---
 
+## 2026-07-27 — Scheduled review #6: BTC v2 survived a down week (real positive); weather v2 at the gate → breakeven FAIL, decision teed up
+
+**Pipeline:** healthy, syncs daily (one extra manual sync Jul 24 11:34 — harmless). NOTES.md untouched since Jul 15, PROPOSALS.md still empty.
+
+### BTC v2 — the regime concern got a partial answer, and it held
+**63/200 resolved, +70.9¢/$, CI [+23, +119].** Last review my headline skepticism was "untested in a downtrend." Update: **BTC fell −1.7% over the last 6 days**, and the last-third bets spanning that pullback were still **+81¢ (11W/10L)** — a 52% win rate that stays EV-positive because entries are cheap. That's a genuine, non-trivial positive: the strategy took a mild adverse regime and didn't break. Caveats stay firmly in place: still 63/200, still 100% UP (0 DOWN), −1.7% is a shallow pullback not a real bear leg, and +71¢ remains implausibly large so the artifact/regime prior holds. **No action, gate unchanged — but this is the first evidence that isn't purely favorable-regime.** ~5 wks to n=200.
+
+### Weather v2 — at the gate, and it's a breakeven FAIL as predicted
+**49/50 resolved, +4.5¢/$, CI [−17, +26].** One bet from the formal n=50 gate, and the verdict is already unambiguous directionally:
+- EV **+4.5¢ is below the +5¢ bar**, and
+- more decisively, CI [−17, +26] **cannot be distinguished from zero.** Even a nudge over +5¢ next review wouldn't be a real edge at this CI.
+
+The selection fix was a real success (58 NO / 0 YES — the 0W/7L YES disaster is gone permanently). But the calibration table confirms exactly what I flagged: the model stays overconfident (says 90% → wins 59%; says 98% → wins 67%), which caps NO-only at breakeven. **v2 fixed the selection disease and revealed the calibration disease underneath.** This is a legitimate scientific result, not a failure of process — we now know precisely why weather doesn't clear the bar.
+
+**Formal gate confirmation lands next review at n≥50, but the outcome won't change.** Bringing the fork to Undertow now (see chat): kill weather, or build a v3 probability-calibration layer (deflate model probs toward realized frequency, steepest at the top bucket) and prove forward once more.
+
+### Bottom line
+BTC v2: encouraging + first non-favorable-regime evidence, still far from the gate, hold. Weather v2: effectively failed at breakeven, decision pending. Next review Thursday.
+
+---
+
 ## 2026-07-23 — Scheduled review #5: BTC v2 "significant" at n=41 — and this is EXACTLY the trap the 200-gate exists to defeat
 
 **Pipeline:** healthy, syncs daily. NOTES.md untouched since Jul 15, PROPOSALS.md still empty.
