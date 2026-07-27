@@ -1,6 +1,6 @@
 👻 SHADOW REPORT — hypothetical results at real entry prices, no money moved
 
-   (50 flagged bet(s) excluded — blackout or suspect-edge; rerun with --include-flagged to analyze them)
+   (52 flagged bet(s) excluded — blackout or suspect-edge; rerun with --include-flagged to analyze them)
 
 ── BTC ──
    Recommendations: 245 (245 resolved, 0 pending)
@@ -10,13 +10,13 @@
    ❌ VERDICT: no edge at n=245 (EV 1.3¢/$) — do not go live; kill or retune
 
 ── WEATHER ──
-   Recommendations: 53 (51 resolved, 2 pending)
-   Record: 25W/26L (49.0% WR) at avg entry 48¢
-   Hypothetical: staked $255.00, net $-41.06
-   ⭐ EV per $1 staked: -16.1¢  (threshold: +5¢)
+   Recommendations: 55 (54 resolved, 1 pending)
+   Record: 27W/27L (50.0% WR) at avg entry 48¢
+   Hypothetical: staked $270.00, net $-37.49
+   ⭐ EV per $1 staked: -13.9¢  (threshold: +5¢)
    Calibration (model said → it happened):
-     38% predicted → 0% realized (n=12)
+     38% predicted → 0% realized (n=13)
      68% predicted → 50% realized (n=16)
-     85% predicted → 74% realized (n=23)
-   ❌ VERDICT: no edge at n=51 (EV -16.1¢/$) — do not go live; kill or retune
+     84% predicted → 76% realized (n=25)
+   ❌ VERDICT: no edge at n=54 (EV -13.9¢/$) — do not go live; kill or retune
 
