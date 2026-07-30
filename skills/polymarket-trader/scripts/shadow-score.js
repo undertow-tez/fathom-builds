@@ -102,7 +102,7 @@ function report(lines) {
     if ((bet.flags || []).length > 0 && !includeFlagged) { flaggedExcluded++; continue; }
     const s = stats[bet.strategy] ??= {
       recs: 0, resolved: 0, wins: 0, losses: 0,
-      staked: 0, returned: 0, priceSum: 0, priced: 0, cal: [],
+      staked: 0, returned: 0, priceSum: 0, priced: 0, cal: [], rets: [],
     };
     s.recs++;
     const r = resolves[bet.slug];
@@ -115,6 +115,8 @@ function report(lines) {
     const won = String(r.result).includes('WON');
     if (won) { s.wins++; s.returned += price ? amount / price : amount * 1.9; }
     else s.losses++;
+    // Per-$1 return for the significance test: a win at price p pays (1-p)/p, a loss -1.
+    if (price && price > 0) s.rets.push(won ? (1 - price) / price : -1);
     const modelProb = bet.meta?.modelProb;
     if (typeof modelProb === 'number') s.cal.push({ p: modelProb, won });
   }
@@ -129,12 +131,21 @@ function report(lines) {
     const avgPrice = s.priced ? s.priceSum / s.priced : null;
     const t = THRESHOLDS[strategy] || { minResolved: 100, minEv: 0.05 };
 
+    // 95% CI on EV per $1 — a point estimate above the bar means nothing if the
+    // interval includes zero (a favorable run, not a proven edge).
+    const nr = s.rets.length;
+    const mean = nr ? s.rets.reduce((a, b) => a + b, 0) / nr : 0;
+    const sd = nr > 1 ? Math.sqrt(s.rets.reduce((a, x) => a + (x - mean) ** 2, 0) / (nr - 1)) : 0;
+    const se = nr > 1 ? sd / Math.sqrt(nr) : Infinity;
+    const lo95 = mean - 1.96 * se;
+    const hi95 = mean + 1.96 * se;
+
     console.log(`── ${strategy.toUpperCase()} ──`);
     console.log(`   Recommendations: ${s.recs} (${s.resolved} resolved, ${s.recs - s.resolved} pending)`);
     if (s.resolved) {
       console.log(`   Record: ${s.wins}W/${s.losses}L (${wr.toFixed(1)}% WR)${avgPrice ? ` at avg entry ${(avgPrice * 100).toFixed(0)}¢` : ''}`);
       console.log(`   Hypothetical: staked $${s.staked.toFixed(2)}, net ${net >= 0 ? '+' : ''}$${net.toFixed(2)}`);
-      console.log(`   ⭐ EV per $1 staked: ${ev >= 0 ? '+' : ''}${(ev * 100).toFixed(1)}¢  (threshold: +${(t.minEv * 100).toFixed(0)}¢)`);
+      console.log(`   ⭐ EV per $1 staked: ${ev >= 0 ? '+' : ''}${(ev * 100).toFixed(1)}¢  (threshold: +${(t.minEv * 100).toFixed(0)}¢)  95% CI [${(lo95 * 100).toFixed(0)}, ${(hi95 * 100).toFixed(0)}]`);
     }
 
     // Calibration (weather): model prob vs realized frequency
@@ -150,11 +161,16 @@ function report(lines) {
       }
     }
 
-    // Verdict
+    // Verdict — a real edge needs BOTH: point estimate above the economic bar
+    // AND statistical significance (lower 95% CI bound above zero). A point
+    // estimate over the bar with a CI that includes zero is a favorable run,
+    // not a proven edge — it does NOT earn live money.
     if (s.resolved < t.minResolved) {
       console.log(`   📏 VERDICT: keep shadowing — ${s.resolved}/${t.minResolved} resolved bets`);
+    } else if (ev >= t.minEv && lo95 > 0) {
+      console.log(`   ✅ VERDICT: edge PROVEN at n=${s.resolved} (EV +${(ev * 100).toFixed(1)}¢, CI lower bound +${(lo95 * 100).toFixed(0)}¢ > 0) — recommend to Undertow for live at minimum size`);
     } else if (ev >= t.minEv) {
-      console.log(`   ✅ VERDICT: edge holds at n=${s.resolved} — eligible to go live / scale per SKILL.md`);
+      console.log(`   ⏳ VERDICT: point estimate +${(ev * 100).toFixed(1)}¢ clears the bar but CI [${(lo95 * 100).toFixed(0)}, ${(hi95 * 100).toFixed(0)}] includes zero — NOT a proven edge, keep shadowing until the interval clears zero. Do NOT go live.`);
     } else {
       console.log(`   ❌ VERDICT: no edge at n=${s.resolved} (EV ${(ev * 100).toFixed(1)}¢/$) — do not go live; kill or retune`);
     }

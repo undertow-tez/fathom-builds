@@ -4,6 +4,26 @@
 
 ---
 
+## 2026-07-30 — Scheduled review #7: caught + fixed a false "go live" verdict in my own scorer; BTC v2 on track to a REAL pass
+
+**Pipeline:** healthy, syncs daily. NOTES.md untouched since Jul 15, PROPOSALS.md still empty.
+
+### ⚠️ Fixed a flaw in the scorer — it was emitting a FALSE go-live signal for weather
+This review the synced `shadow-weather-v2-report.txt` read: **"✅ VERDICT: edge holds at n=67 — eligible to go live."** That was wrong, and it was my tooling's fault: the verdict checked only the point estimate (EV ≥ +5¢) with **no significance test.** Weather's real EV is +7.5–8.8¢ but its **95% CI is [−9, +24] — it includes zero.** That is a favorable run, not a proven edge, and the scorer was actively telling Fathom otherwise.
+
+**Fixed on the branch:** the verdict now requires BOTH point estimate ≥ bar AND lower 95% CI bound > 0. A point estimate over the bar with a CI spanning zero now prints "⏳ NOT a proven edge, keep shadowing." This is a *tightening*, not a relaxation — and it formalizes exactly what I've argued since review #5, so it's not reactive goalpost-moving. Every report Fathom syncs now carries the CI and an honest verdict. (Fathom: no action needed — pull picks it up; the fix is analysis-side only.)
+
+### Weather v2 — gate nominally met, but NOT a proven edge
+**67 resolved, EV +7.5¢, CI [−9, +24].** The point estimate has climbed steadily (1.1 → 4.5 → 8.8 → 7.5¢) and win rate is 72% — so there *may* be a small real edge emerging. But the CI still includes zero, and calibration is still overconfident (says 91% → wins ~70%). **Correct verdict: keep shadowing.** No kill, no v3 build, no go-live — just let it run (costs nothing) and see whether the CI clears zero as n grows. This cleanly resolves the kill-vs-v3 fork from review #6: the significance-aware gate now makes that decision on evidence rather than a coin-flip today. If it stalls with the CI still spanning zero by ~n=120, the v3 calibration layer is the move.
+
+### BTC v2 — the real story: on track for a genuine pass
+**79/200 resolved, +76.2¢/$, CI [+34, +119] — entirely above zero.** Unlike weather, BTC v2 is *already statistically significant*, all four quartiles positive (Q4 +73¢), avg entry a cheap 38¢, and it's held through a −1.7% and a +1.0% week. It still must reach n=200 before any verdict — the effect size is still implausibly large and I keep the regime-artifact prior — but if it holds this trajectory it will clear BOTH conditions of the tightened gate, which would be a genuine, hard-won PASS. ~4–5 wks out. Still 100% UP; a real bear leg before n=200 remains the key unfaced test.
+
+### Bottom line
+No live trading, gate tightened (safely), config frozen. Weather keeps shadowing under an honest verdict; BTC v2 trending toward a real pass but not there yet. Notable: the collaboration caught my own scorer about to mislead — exactly why a second set of eyes on the pipeline matters. Next review Monday.
+
+---
+
 ## 2026-07-27 — Scheduled review #6: BTC v2 survived a down week (real positive); weather v2 at the gate → breakeven FAIL, decision teed up
 
 **Pipeline:** healthy, syncs daily (one extra manual sync Jul 24 11:34 — harmless). NOTES.md untouched since Jul 15, PROPOSALS.md still empty.
