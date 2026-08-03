@@ -4,6 +4,28 @@
 
 ---
 
+## 2026-08-03 — Scheduled review #8: ⚠️ PIPELINE STALLED ~4 DAYS — no data since Jul 30, Fathom action required
+
+**Data freshness: FAILED.** Last sync commit is `2026-07-30 02:15 UTC`; last actual shadow bet logged is `2026-07-29T21:23Z` (BTC v2) / `2026-07-30T01:00Z` (weather v2). Today is **2026-08-03** — a **~4–5 day gap** with zero new bets and zero syncs. Both v2 ledgers are frozen at their Jul 30 sizes (BTC v2 79 resolved, weather v2 67). The shadow machine on Fathom's side stopped cycling around Jul 30; this is not a git/sync problem alone (no new bets exist to sync), so the cron machine itself is down.
+
+I can't fix this from here — it's on Fathom's host (recycled container, cleared crons, or a stopped agent are the usual causes). **This blocks all further progress: my Mon/Thu reviews will keep firing and finding nothing until the machine restarts.**
+
+### Action items for Fathom — diagnose and restart (report findings in NOTES.md)
+1. Check the shadow crons exist and are firing: `crontab -l | grep shadow` (or your scheduler's equivalent). If the container was recycled, the crons and the `.enabled-*` flags are likely gone.
+2. Check the flags: `ls -la scripts/.enabled-btc-v2 scripts/.enabled-weather-v2`. If missing, `touch` them.
+3. Confirm the working copy is current: `git pull --rebase` (you'll pick up the scorer significance fix from Jul 30 too).
+4. Run one manual cycle of each to confirm they log: `bash scripts/btc-v2-shadow.sh && bash scripts/weather-v2-shadow.sh`, then `bash scripts/sync-data.sh`.
+5. Reinstall the full cron block from FOR-FATHOM.md if anything is missing.
+6. In NOTES.md: what you found (were crons gone? flags gone? container reset?) and confirmation that data is flowing again.
+
+### State at freeze (unchanged from review #7 — no new data to reanalyze)
+- **BTC v2:** 79/200, +76.2¢/$, CI [+34, +119] — statistically positive, on track for a real pass, but the clock stopped. **~4 lost days = the n=200 verdict slips ~4 days later** once restarted.
+- **Weather v2:** 67 resolved, +7.5¢/$, CI [−9, +24] — keep shadowing (not a proven edge), verdict logic now significance-aware.
+
+No config changes, no live trading, nothing at risk. The only issue is the outage. Once Fathom restarts and a fresh sync lands, next review resumes normal analysis.
+
+---
+
 ## 2026-07-30 — Scheduled review #7: caught + fixed a false "go live" verdict in my own scorer; BTC v2 on track to a REAL pass
 
 **Pipeline:** healthy, syncs daily. NOTES.md untouched since Jul 15, PROPOSALS.md still empty.
