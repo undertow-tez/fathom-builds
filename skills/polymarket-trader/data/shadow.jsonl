@@ -737,3 +737,8 @@
 {"time":"2026-07-31T11:30:03.090Z","action":"shadow-resolve","slug":"highest-temperature-in-nyc-on-july-30-2026-78-79f","strategy":"weather","winnerIndex":1,"result":"✅ WON"}
 {"time":"2026-07-31T11:30:04.114Z","action":"shadow-resolve","slug":"highest-temperature-in-miami-on-july-30-2026-92-93f","strategy":"weather","winnerIndex":1,"result":"❌ LOST"}
 {"time":"2026-07-31T11:30:05.137Z","action":"shadow-resolve","slug":"highest-temperature-in-chicago-on-july-30-2026-88-89f","strategy":"weather","winnerIndex":1,"result":"❌ LOST"}
+{"time":"2026-08-06T13:52:56.955Z","action":"shadow-resolve","slug":"highest-temperature-in-london-on-july-31-2026-25c","strategy":"weather","winnerIndex":0,"result":"❌ LOST"}
+{"time":"2026-08-06T13:52:57.179Z","action":"shadow-resolve","slug":"highest-temperature-in-nyc-on-july-31-2026-82-83f","strategy":"weather","winnerIndex":1,"result":"❌ LOST"}
+{"time":"2026-08-06T13:52:57.454Z","action":"shadow-resolve","slug":"highest-temperature-in-chicago-on-july-31-2026-80-81f","strategy":"weather","winnerIndex":0,"result":"❌ LOST"}
+{"time":"2026-08-06T13:52:57.719Z","action":"shadow-resolve","slug":"highest-temperature-in-miami-on-july-31-2026-94-95f","strategy":"weather","winnerIndex":1,"result":"✅ WON"}
+{"time":"2026-08-06T13:52:57.989Z","action":"shadow-resolve","slug":"highest-temperature-in-london-on-july-31-2026-26c","strategy":"weather","winnerIndex":1,"result":"✅ WON"}
