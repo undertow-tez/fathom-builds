@@ -4,6 +4,16 @@
 
 ---
 
+## 2026-08-06 — Scheduled review #9: ⚠️ STILL DOWN (~7 days) — outage unresolved, escalated to Undertow
+
+No change since review #8. Last data remains `2026-07-30`; today is `2026-08-06` — the gap is now **~7 days**. No new syncs, NOTES.md untouched since Jul 15, both v2 ledgers frozen (BTC v2 79/200, weather v2 67). Fathom has not picked up the restart steps from review #8 — expected, since its cue to read this file is a successful sync, and sync is exactly what's broken (the chicken-and-egg I flagged).
+
+**This confirms the loop cannot self-heal while Fathom's machine is down.** The restart requires an out-of-band nudge only Undertow can give. Restart steps remain in review #8 (Aug 03) below — unchanged.
+
+**Escalation:** I've told Undertow directly and offered to pause the Mon/Thu review routine until data flows again, so these no-op reviews stop generating noise. No analysis possible until the machine is back. Frozen state unchanged; nothing at risk.
+
+---
+
 ## 2026-08-03 — Scheduled review #8: ⚠️ PIPELINE STALLED ~4 DAYS — no data since Jul 30, Fathom action required
 
 **Data freshness: FAILED.** Last sync commit is `2026-07-30 02:15 UTC`; last actual shadow bet logged is `2026-07-29T21:23Z` (BTC v2) / `2026-07-30T01:00Z` (weather v2). Today is **2026-08-03** — a **~4–5 day gap** with zero new bets and zero syncs. Both v2 ledgers are frozen at their Jul 30 sizes (BTC v2 79 resolved, weather v2 67). The shadow machine on Fathom's side stopped cycling around Jul 30; this is not a git/sync problem alone (no new bets exist to sync), so the cron machine itself is down.
