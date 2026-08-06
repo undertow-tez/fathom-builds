@@ -1,9 +1,9 @@
 👻 SHADOW REPORT — hypothetical results at real entry prices, no money moved
 
 ── BTC_V2 ──
-   Recommendations: 88 (88 resolved, 0 pending)
-   Record: 49W/39L (55.7% WR) at avg entry 37¢
-   Hypothetical: staked $440.00, net +$270.50
-   ⭐ EV per $1 staked: +61.5¢  (threshold: +5¢)
-   📏 VERDICT: keep shadowing — 88/200 resolved bets
+   Recommendations: 91 (91 resolved, 0 pending)
+   Record: 49W/42L (53.8% WR) at avg entry 37¢
+   Hypothetical: staked $455.00, net +$255.50
+   ⭐ EV per $1 staked: +56.2¢  (threshold: +5¢)  95% CI [17, 95]
+   📏 VERDICT: keep shadowing — 91/200 resolved bets
 
