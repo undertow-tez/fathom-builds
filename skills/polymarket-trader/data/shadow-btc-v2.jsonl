@@ -180,3 +180,7 @@
 {"time":"2026-07-31T11:38:02.530Z","action":"shadow-resolve","slug":"btc-updown-15m-1785496500","strategy":"btc_v2","winnerIndex":1,"result":"❌ LOST"}
 {"time":"2026-07-31T15:08:04Z","strategy":"btc_v2","slug":"btc-updown-15m-1785510000","market":"Bitcoin Up or Down - July 31, 11:00AM-11:15AM ET","outcome":"UP","outcomeIndex":0,"amount":"5","price":"0.415","flags":[],"meta":{"score":4,"rsi":56.4,"vol":0.0204,"hourly":-0.029},"result":"shadow"}
 {"time":"2026-07-31T15:23:02.038Z","action":"shadow-resolve","slug":"btc-updown-15m-1785510000","strategy":"btc_v2","winnerIndex":1,"result":"❌ LOST"}
+{"time":"2026-08-06T15:08:02Z","strategy":"btc_v2","slug":"btc-updown-15m-1786028400","market":"Bitcoin Up or Down - August 6, 11:00AM-11:15AM ET","outcome":"UP","outcomeIndex":0,"amount":"5","price":"0.545","flags":[],"meta":{"score":4,"rsi":82.5,"vol":0.0454,"hourly":0.727},"result":"shadow"}
+{"time":"2026-08-06T15:25:04.886Z","action":"shadow-resolve","slug":"btc-updown-15m-1786028400","strategy":"btc_v2","winnerIndex":0,"result":"✅ WON"}
+{"time":"2026-08-07T01:23:04Z","strategy":"btc_v2","slug":"btc-updown-15m-1786065300","market":"Bitcoin Up or Down - August 6, 9:15PM-9:30PM ET","outcome":"UP","outcomeIndex":0,"amount":"5","price":"0.215","flags":[],"meta":{"score":3.6,"rsi":42.5,"vol":0.0303,"hourly":0.134},"result":"shadow"}
+{"time":"2026-08-07T01:53:02.838Z","action":"shadow-resolve","slug":"btc-updown-15m-1786065300","strategy":"btc_v2","winnerIndex":0,"result":"✅ WON"}
