@@ -1,12 +1,13 @@
+👻 Resolved 1 shadow bet(s)
 👻 SHADOW REPORT — hypothetical results at real entry prices, no money moved
 
 ── WEATHER_V2 ──
-   Recommendations: 91 (87 resolved, 4 pending)
-   Record: 59W/28L (67.8% WR) at avg entry 67¢
-   Hypothetical: staked $435.00, net +$11.94
-   ⭐ EV per $1 staked: +2.7¢  (threshold: +5¢)  95% CI [-13, 19]
+   Recommendations: 96 (92 resolved, 4 pending)
+   Record: 62W/30L (67.4% WR) at avg entry 67¢
+   Hypothetical: staked $460.00, net +$12.10
+   ⭐ EV per $1 staked: +2.6¢  (threshold: +5¢)  95% CI [-13, 18]
    Calibration (model said → it happened):
-     68% predicted → 62% realized (n=13)
-     90% predicted → 69% realized (n=74)
-   ❌ VERDICT: no edge at n=87 (EV 2.7¢/$) — do not go live; kill or retune
+     68% predicted → 60% realized (n=15)
+     90% predicted → 69% realized (n=77)
+   ❌ VERDICT: no edge at n=92 (EV 2.6¢/$) — do not go live; kill or retune
 
