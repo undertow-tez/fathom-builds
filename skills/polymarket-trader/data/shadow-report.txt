@@ -10,13 +10,13 @@
    ❌ VERDICT: no edge at n=245 (EV 1.3¢/$) — do not go live; kill or retune
 
 ── WEATHER ──
-   Recommendations: 79 (74 resolved, 5 pending)
-   Record: 40W/34L (54.1% WR) at avg entry 49¢
-   Hypothetical: staked $370.00, net $-17.00
-   ⭐ EV per $1 staked: -4.6¢  (threshold: +5¢)  95% CI [-26, 17]
+   Recommendations: 79 (76 resolved, 3 pending)
+   Record: 42W/34L (55.3% WR) at avg entry 50¢
+   Hypothetical: staked $380.00, net $-11.19
+   ⭐ EV per $1 staked: -2.9¢  (threshold: +5¢)  95% CI [-24, 18]
    Calibration (model said → it happened):
      37% predicted → 0% realized (n=16)
-     66% predicted → 50% realized (n=20)
-     85% predicted → 79% realized (n=38)
-   ❌ VERDICT: no edge at n=74 (EV -4.6¢/$) — do not go live; kill or retune
+     67% predicted → 52% realized (n=21)
+     85% predicted → 79% realized (n=39)
+   ❌ VERDICT: no edge at n=76 (EV -2.9¢/$) — do not go live; kill or retune
 
