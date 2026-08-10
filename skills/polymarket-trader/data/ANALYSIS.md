@@ -4,6 +4,29 @@
 
 ---
 
+## 2026-08-10 — Scheduled review #10: pipeline RECOVERED; weather v2 formal verdict = FAIL (kill recommended); BTC v2 edge survived the outage
+
+**Pipeline: back up.** Syncs resumed Aug 8; data flowing daily again. There's a ~8-day hole (Jul 30–Aug 7) in both series from the outage — acceptable, the samples are still valid, just delayed. Fathom restarted the machine but didn't log it in NOTES.md (still untouched since Jul 15); minor, data is what matters. The pause-reviews question is now moot — reviews are useful again.
+
+### Weather v2 — FORMAL VERDICT: FAIL. Recommend killing weather.
+**97 resolved (gate n≥50 long met), EV +0.9¢/$, CI [−14, +16] → FAIL.** This is the decisive result, and it's the significance fix earning its entire keep:
+- At n=67 (review #7) weather read +8.8¢ and the *old* scorer called it "eligible to go live." With 30 more bets it **reverted to +0.9¢** — exactly the favorable-run mean-reversion the tightened gate was built to catch. Had we shipped it live at n=67, we'd be betting real money on a breakeven-at-best strategy right now.
+- Root cause confirmed across 97 bets: the model is persistently ~25–30 pts overconfident (says 98% → wins 68%, says 90% → wins 66%). The v2 selection fix genuinely worked (103 NO / 0 YES — the longshot disaster never returned), but fixing selection only exposed that **the weather markets are efficiently priced and there's no edge left to extract** once the model's overconfidence is accounted for.
+
+**Recommendation to Undertow: retire weather.** Two full retunes (baseline + v2, 200+ combined resolved bets) both land at breakeven. A v3 calibration layer would most likely just shrink us toward betting nothing — deflating an overconfident model doesn't manufacture edge the market left on the table; the data says it didn't. Weather has had a thorough, fair test and there's no there there. Kill it and concentrate on BTC v2.
+
+### BTC v2 — the edge survived the outage AND a sideways regime
+**112/200 resolved, +54.2¢/$, CI [+21, +88].** Still statistically positive, still 100% UP. The important read is the split across the gap:
+- pre-outage (≤Jul 30): +61.5¢ (n=88)
+- post-restart (≥Aug 7): +43.9¢ (n=20, CI wide but positive)
+
+BTC ran flat-choppy the last 12 days (−0.4%, ranged 62.8k–65k), so v2 has now held through mild-up, mild-down, AND sideways regimes. Win rate eased to 54% but EV stays strongly positive on cheap entries. Encouraging and consistent — but **still 112/200, and still never tested in a real sustained downtrend** (the one regime that could break an UP-only strategy). Gate unchanged; ~4 wks out. The implausible effect size keeps my artifact prior alive until n=200 renders it.
+
+### Bottom line
+Weather v2: **failed its gate, recommend kill** (Undertow's call — see chat). BTC v2: 112/200, edge persisting across regimes, hold to n=200. Pipeline healthy again. The significance fix from review #7 just paid for itself by catching a false weather pass before it reached real money.
+
+---
+
 ## 2026-08-06 — Scheduled review #9: ⚠️ STILL DOWN (~7 days) — outage unresolved, escalated to Undertow
 
 No change since review #8. Last data remains `2026-07-30`; today is `2026-08-06` — the gap is now **~7 days**. No new syncs, NOTES.md untouched since Jul 15, both v2 ledgers frozen (BTC v2 79/200, weather v2 67). Fathom has not picked up the restart steps from review #8 — expected, since its cue to read this file is a successful sync, and sync is exactly what's broken (the chicken-and-egg I flagged).
