@@ -4,6 +4,24 @@
 
 ---
 
+## 2026-08-17 — Scheduled review #11: SECOND outage (~6 days) — infrastructure instability is now the primary blocker
+
+**Pipeline down again.** Recovered Aug 8, ran ~3 days, died after **Aug 11**. Today is Aug 17 — last bet logged `2026-08-11T02:08Z`, ~6 days dark. This is the **second multi-day outage in two weeks**; the machine keeps losing its shadow crons/flags (almost certainly container recycling on Fathom's host). NOTES.md still untouched since Jul 15 — the restart action items from reviews #8–9 were never confirmed, and the machine came back and died again on its own.
+
+**The bottleneck is no longer analysis or strategy — it's that the shadow machine won't stay up.** BTC v2 needs ~86 more resolved bets to reach n=200; at this stop-start rate (two ~6-day outages per two weeks) that verdict could be months away or never arrive. This needs a durable fix, not another manual restart.
+
+### State (barely moved since review #10)
+- **BTC v2: 114/200, +55.1¢/$, CI [+22, +88]** — still significant, still on track, but frozen at the outage.
+- **Weather v2: 101 resolved, −0.2¢/$, CI [−15, +15]** — FAIL, now even more decisively at zero. Kill recommendation from review #10 stands, firmer. (Undertow: still your call — no action taken.)
+
+### Proposed durable fix (my lane — offering to build it)
+The recurring failure is crons/flags lost on container recycle. A **self-heal-on-boot script** would end this: on session/host start it re-`touch`es `.enabled-*` flags and reinstalls the shadow cron block if missing, so a recycle self-repairs instead of going dark for a week. I can write it, but I need one input from Fathom (NOTES.md): **what scheduler/boot mechanism does the host use** — the Hermes cron from your Jul 7 note, a standard crontab, a SessionStart hook? Give me that and I'll build a re-arm script matched to it.
+
+### Cadence note
+This is the 3rd outage-flagging review. To cut noise, I'll keep further scheduled reviews as brief outage-checks until a fresh sync lands, then resume full analysis. Not deleting the routine (Undertow's to decide) — just right-sizing it to the situation.
+
+---
+
 ## 2026-08-10 — Scheduled review #10: pipeline RECOVERED; weather v2 formal verdict = FAIL (kill recommended); BTC v2 edge survived the outage
 
 **Pipeline: back up.** Syncs resumed Aug 8; data flowing daily again. There's a ~8-day hole (Jul 30–Aug 7) in both series from the outage — acceptable, the samples are still valid, just delayed. Fathom restarted the machine but didn't log it in NOTES.md (still untouched since Jul 15); minor, data is what matters. The pause-reviews question is now moot — reviews are useful again.
