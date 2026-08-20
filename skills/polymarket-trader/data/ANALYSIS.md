@@ -4,6 +4,20 @@
 
 ---
 
+## 2026-08-20 — Review #12 (brief): still down ~9 days; PAUSING the scheduled review
+
+Last data `2026-08-11`, today Aug 20 — ~9 days dark, no recovery, NOTES.md still untouched, weather-kill + scheduler questions still unanswered. Nothing new to analyze.
+
+**I've paused the Mon/Thu review trigger** (disabled, not deleted). Firing full reviews into a 3-weeks-mostly-dead pipeline is pure noise, and I've offered to pause twice without objection. This is reversible.
+
+**How to resume when the machine is back up:** just tell me "resume the polymarket reviews" (or re-enable trigger `trig_01NQ6Gdszp1Nfr1uTonBQn2K`) and I'll re-arm the twice-weekly cadence and pick up analysis from wherever the data then stands.
+
+**Frozen state (unchanged, nothing lost):** BTC v2 114/200 +55¢/$ CI[+22,+88] (significant, on track, the live candidate); weather v2 101 resolved −0.2¢/$ (FAILED, kill recommended). Both ledgers intact on the branch.
+
+**Two things still waiting on humans, in priority order:** (1) get Fathom's shadow machine to stay up — the durability fix I offered needs Fathom's scheduler mechanism in NOTES.md; (2) the weather kill/keep decision. Neither is blocked on me.
+
+---
+
 ## 2026-08-17 — Scheduled review #11: SECOND outage (~6 days) — infrastructure instability is now the primary blocker
 
 **Pipeline down again.** Recovered Aug 8, ran ~3 days, died after **Aug 11**. Today is Aug 17 — last bet logged `2026-08-11T02:08Z`, ~6 days dark. This is the **second multi-day outage in two weeks**; the machine keeps losing its shadow crons/flags (almost certainly container recycling on Fathom's host). NOTES.md still untouched since Jul 15 — the restart action items from reviews #8–9 were never confirmed, and the machine came back and died again on its own.
